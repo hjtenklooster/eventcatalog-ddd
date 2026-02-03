@@ -285,36 +285,30 @@ This repo uses a fork-based workflow:
 git checkout -b feature/my-feature
 git push -u fork feature/my-feature
 
-# Create PR (to upstream or within fork)
-gh pr create --repo event-catalog/eventcatalog  # upstream PR
-gh pr create --repo hjtenklooster/eventcatalog-ddd  # fork PR (for code review)
+# Create PR - ALWAYS on fork, NEVER on upstream
+gh pr create --repo hjtenklooster/eventcatalog-ddd
 ```
 
-### Rebasing - IMPORTANT
+### IMPORTANT: Never Create PRs to Upstream
 
-**Always check PR target before rebasing:**
+**NEVER create PRs directly to `event-catalog/eventcatalog` (upstream).** Always create PRs on the fork (`hjtenklooster/eventcatalog-ddd`) only. The user will manually create upstream PRs when ready.
+
+Reason: PRs to upstream expose commits permanently (even after closing), and cannot be deleted without GitHub support intervention.
+
+### Rebasing
+
+All PRs target fork/main, so always rebase onto fork:
 
 ```bash
-# Check where the PR is and what it targets
-gh pr list --repo hjtenklooster/eventcatalog-ddd --json number,baseRefName,headRefName
-
-# If PR targets fork/main (code review PR):
 git fetch fork main && git rebase fork/main
-
-# If PR targets origin/main (upstream PR):
-git fetch origin main && git rebase origin/main
 ```
-
-**Rule of thumb:** Rebase onto the branch your PR targets:
-- PR on fork repo → `git rebase fork/main`
-- PR on upstream repo → `git rebase origin/main`
 
 ### PR Workflow with Code Review
 
 1. Create branch, make changes, push to fork
 2. Create PR on fork repo to trigger CodeRabbit/CodeAnt
 3. Address review feedback
-4. When ready, create PR to upstream
+4. User will manually create upstream PR when ready (Claude should never do this)
 
 ## Plan Mode
 
