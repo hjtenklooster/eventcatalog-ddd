@@ -1,16 +1,11 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import dagre from 'dagre';
 import { type Node, type Edge, Position } from '@xyflow/react';
-import {
-  createDagreGraph,
-  generateIdForNode,
-  generatedIdForEdge,
-  calculatedNodes,
-  createEdge,
-} from '@utils/node-graphs/utils/utils';
+import { createDagreGraph, generateIdForNode, calculatedNodes } from '@utils/node-graphs/utils/utils';
 
 import { findInMap, createVersionedMap } from '@utils/collections/util';
 import type { CollectionMessageTypes } from '@types';
+import { getNodesAndEdgesForConsumedMessage, getNodesAndEdgesForProducedMessage } from './message-node-graph';
 
 type DagreGraph = any;
 
@@ -20,19 +15,6 @@ interface Props {
   mode?: 'simple' | 'full';
   defaultFlow?: DagreGraph;
 }
-
-const getSendsLabelByMessageType = (messageType: string) => {
-  switch (messageType) {
-    case 'events':
-      return 'emits';
-    case 'commands':
-      return 'invokes command';
-    case 'queries':
-      return 'requests';
-    default:
-      return 'sends';
-  }
-};
 
 const getReceivesLabelByMessageType = (messageType: string) => {
   switch (messageType) {
@@ -49,20 +31,23 @@ const getReceivesLabelByMessageType = (messageType: string) => {
 
 export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFlow }: Props) => {
   const flow = defaultFlow || createDagreGraph({ ranksep: 300, nodesep: 50 });
-  const nodes: Node[] = [];
-  const edges: Edge[] = [];
+  let nodes: Node[] = [];
+  let edges: Edge[] = [];
 
   // Fetch all collections in parallel
-  const [entities, events, commands, queries] = await Promise.all([
+  const [entities, services, events, commands, queries, channels] = await Promise.all([
     getCollection('entities'),
+    getCollection('services'),
     getCollection('events'),
     getCollection('commands'),
     getCollection('queries'),
+    getCollection('channels'),
   ]);
 
   const allMessages = [...events, ...commands, ...queries];
   const entityMap = createVersionedMap(entities);
   const messageMap = createVersionedMap(allMessages);
+  const channelMap = createVersionedMap(channels);
 
   // Find the entity
   const entity = findInMap(entityMap, id, version);
@@ -95,60 +80,71 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
     type: 'entities',
   });
 
-  // Add received messages (left side - incoming)
-  receives.forEach((message) => {
-    nodes.push({
-      id: generateIdForNode(message),
-      sourcePosition: Position.Right,
-      targetPosition: Position.Left,
-      data: { mode, message: { ...message.data } },
-      position: { x: 0, y: 0 },
-      type: message.collection,
-    });
-    edges.push(
-      createEdge({
-        id: generatedIdForEdge(message, entity),
-        source: generateIdForNode(message),
-        target: generateIdForNode(entity),
-        label: getReceivesLabelByMessageType(message.collection),
-        animated: true,
-      })
-    );
-  });
+  const entityNodeId = generateIdForNode(entity);
 
-  // Add sent messages (right side - outgoing)
-  sends.forEach((message) => {
-    nodes.push({
-      id: generateIdForNode(message),
-      sourcePosition: Position.Right,
-      targetPosition: Position.Left,
-      data: { mode, message: { ...message.data } },
-      position: { x: 0, y: 0 },
-      type: message.collection,
+  // Process received messages - get producers (services/entities that send what this entity receives)
+  for (const message of receives) {
+    const { nodes: consumedMessageNodes, edges: consumedMessageEdges } = getNodesAndEdgesForConsumedMessage({
+      message,
+      services,
+      channels,
+      currentNodes: nodes,
+      target: entity,
+      mode,
+      channelMap,
+      entities,
     });
-    edges.push(
-      createEdge({
-        id: generatedIdForEdge(entity, message),
-        source: generateIdForNode(entity),
-        target: generateIdForNode(message),
-        label: getSendsLabelByMessageType(message.collection),
-        animated: true,
-      })
-    );
-  });
+
+    nodes.push(...consumedMessageNodes);
+
+    // Fix edge labels for entity-specific edges (message → entity)
+    const fixedEdges = consumedMessageEdges.map((edge: Edge) => {
+      // If edge targets the entity, use entity-specific labels
+      if (edge.target === entityNodeId) {
+        return { ...edge, label: getReceivesLabelByMessageType(message.collection) };
+      }
+      return edge;
+    });
+    edges.push(...fixedEdges);
+  }
+
+  // Process sent messages - get consumers (services/entities that receive what this entity sends)
+  for (const message of sends) {
+    const { nodes: producedMessageNodes, edges: producedMessageEdges } = getNodesAndEdgesForProducedMessage({
+      message,
+      services,
+      channels,
+      currentNodes: nodes,
+      currentEdges: edges,
+      source: entity,
+      mode,
+      channelMap,
+      entities,
+    });
+
+    nodes.push(...producedMessageNodes);
+    edges.push(...producedMessageEdges);
+  }
+
+  // Make sure all nodes are unique
+  const uniqueNodes = nodes.filter((node, index, self) => index === self.findIndex((t) => t.id === node.id));
+
+  const uniqueEdges = edges.filter(
+    (edge: Edge, index: number, self: Edge[]) => index === self.findIndex((t: Edge) => t.id === edge.id)
+  );
 
   // Apply dagre layout
-  nodes.forEach((node) => {
+  uniqueNodes.forEach((node) => {
     flow.setNode(node.id, { width: 150, height: 100 });
   });
-  edges.forEach((edge) => {
+  uniqueEdges.forEach((edge) => {
     flow.setEdge(edge.source, edge.target);
   });
   dagre.layout(flow);
 
-  const finalNodes = calculatedNodes(flow, nodes);
+  const finalNodes = calculatedNodes(flow, uniqueNodes);
   return {
     nodes: finalNodes,
-    edges,
+    edges: uniqueEdges,
   };
 };

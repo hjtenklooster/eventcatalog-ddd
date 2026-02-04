@@ -323,3 +323,21 @@ export const mockChannels = [
     },
   },
 ];
+
+// Mock entities for testing entity actors in service visualiser
+export const mockEntities = [
+  {
+    id: 'PaymentAggregate-1.0.0',
+    slug: 'PaymentAggregate',
+    collection: 'entities',
+    data: {
+      id: 'PaymentAggregate',
+      name: 'Payment Aggregate',
+      version: '1.0.0',
+      // This entity sends PaymentProcessed which OrderService receives
+      sends: [{ id: 'PaymentProcessed', version: '0.0.1' }],
+      // This entity receives OrderCreatedEvent (same message OrderService sends)
+      receives: [{ id: 'OrderCreatedEvent', version: '0.0.1' }],
+    },
+  },
+];

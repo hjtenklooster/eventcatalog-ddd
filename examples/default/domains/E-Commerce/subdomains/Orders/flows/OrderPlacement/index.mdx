@@ -1,0 +1,69 @@
+---
+id: OrderPlacement
+name: "Order Placement Flow"
+version: "1.0.0"
+summary: "Flow showing how the Order entity receives PlaceOrder and emits OrderConfirmed"
+steps:
+  - id: "customer_places_order"
+    title: "Customer Places Order"
+    summary: "Customer initiates an order from their shopping cart"
+    actor:
+      name: "Customer"
+    next_step:
+      id: "place_order_command"
+      label: "Submit order"
+
+  - id: "place_order_command"
+    title: "Place Order"
+    message:
+      id: "PlaceOrder"
+      version: "0.0.1"
+    next_step:
+      id: "order_entity"
+      label: "Process order"
+
+  - id: "order_entity"
+    title: "Order Entity"
+    custom:
+      title: "Order"
+      summary: "Aggregate root that validates and creates the order"
+      icon: "CubeIcon"
+    next_steps:
+      - id: "order_confirmed"
+        label: "Order valid"
+      - id: "order_rejected"
+        label: "Order invalid"
+
+  - id: "order_confirmed"
+    title: "Order Confirmed"
+    message:
+      id: "OrderConfirmed"
+      version: "0.0.1"
+    next_step:
+      id: "downstream_processing"
+      label: "Notify downstream services"
+
+  - id: "order_rejected"
+    title: "Order Rejected"
+    summary: "Order failed validation (insufficient stock, invalid payment, etc.)"
+
+  - id: "downstream_processing"
+    title: "Downstream Processing"
+    summary: "Payment, inventory, and notification services react to the order"
+
+---
+
+This flow demonstrates how the **Order entity** (an aggregate root) processes incoming commands and emits domain events.
+
+## Flow Pattern
+
+```
+Actor → Command → Entity → Event
+```
+
+1. **Customer** initiates the order
+2. **PlaceOrder** command is sent to the Order entity
+3. **Order** entity validates the request and applies business rules
+4. **OrderConfirmed** event is emitted on success
+
+<NodeGraph />

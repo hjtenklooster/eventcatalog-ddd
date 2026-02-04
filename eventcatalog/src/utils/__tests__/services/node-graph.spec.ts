@@ -1,7 +1,7 @@
-import { MarkerType } from '@xyflow/react';
+import { MarkerType, type Edge } from '@xyflow/react';
 import { getNodesAndEdges } from '../../node-graphs/services-node-graph';
 import { expect, describe, it, vi, beforeEach } from 'vitest';
-import { mockCommands, mockEvents, mockQueries, mockServices, mockChannels, mockContainers } from './mocks';
+import { mockCommands, mockEvents, mockQueries, mockServices, mockChannels, mockContainers, mockEntities } from './mocks';
 import type { ContentCollectionKey } from 'astro:content';
 
 vi.mock('astro:content', async (importOriginal) => {
@@ -22,6 +22,10 @@ vi.mock('astro:content', async (importOriginal) => {
           return Promise.resolve(mockQueries);
         case 'containers':
           return Promise.resolve(mockContainers);
+        case 'entities':
+          return Promise.resolve(mockEntities);
+        default:
+          return Promise.resolve([]);
       }
     },
   };
@@ -399,6 +403,39 @@ describe('Services NodeGraph', () => {
 
       const hasContainers = nodes.some((node) => node.type === 'data');
       expect(hasContainers).toBe(true);
+    });
+
+    it('should show entity as producer when entity sends a message the service receives', async () => {
+      const { nodes, edges } = await getNodesAndEdges({ id: 'OrderService', version: '1.0.0' });
+
+      // PaymentAggregate sends PaymentProcessed which OrderService receives
+      const entityNode = nodes.find((n) => n.id === 'PaymentAggregate-1.0.0');
+      expect(entityNode).toBeDefined();
+      expect(entityNode?.type).toBe('entities');
+
+      // Check edge from entity to message
+      const entityToMessageEdge = edges.find(
+        (e: Edge) => e.source === 'PaymentAggregate-1.0.0' && e.target === 'PaymentProcessed-0.0.1'
+      );
+      expect(entityToMessageEdge).toBeDefined();
+      expect(entityToMessageEdge?.label).toBe('emits');
+    });
+
+    it('should show entity as consumer when entity receives a message the service sends', async () => {
+      const { nodes, edges } = await getNodesAndEdges({ id: 'OrderService', version: '1.0.0' });
+
+      // PaymentAggregate receives OrderCreatedEvent which OrderService sends
+      // Note: We check both the entity node exists AND the edge exists
+      const entityNode = nodes.find((n) => n.id === 'PaymentAggregate-1.0.0');
+      expect(entityNode).toBeDefined();
+      expect(entityNode?.type).toBe('entities');
+
+      // Check edge from message to entity (consumers get edges from message to them)
+      const messageToEntityEdge = edges.find(
+        (e: Edge) => e.source === 'OrderCreatedEvent-0.0.1' && e.target === 'PaymentAggregate-1.0.0'
+      );
+      expect(messageToEntityEdge).toBeDefined();
+      expect(messageToEntityEdge?.label).toBe('subscribes to');
     });
   });
 });

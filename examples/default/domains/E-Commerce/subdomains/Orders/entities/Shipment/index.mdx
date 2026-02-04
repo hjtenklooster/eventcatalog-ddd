@@ -1,0 +1,67 @@
+---
+id: Shipment
+name: Shipment
+version: 1.0.0
+identifier: shipmentId
+aggregateRoot: true
+summary: Represents a shipment created to fulfill an order.
+receives:
+  - id: OrderConfirmed
+    version: 0.0.1
+sends:
+  - id: ShipmentCreated
+    version: 0.0.1
+properties:
+  - name: shipmentId
+    type: UUID
+    required: true
+    description: Unique identifier for the shipment
+  - name: orderId
+    type: UUID
+    required: true
+    description: Reference to the order being shipped
+    references: Order
+    referencesIdentifier: orderId
+    relationType: hasOne
+  - name: status
+    type: string
+    required: true
+    description: Current status of the shipment
+    enum: ['Pending', 'Preparing', 'Shipped', 'InTransit', 'Delivered', 'Returned']
+  - name: trackingNumber
+    type: string
+    required: false
+    description: Carrier tracking number for the shipment
+  - name: carrier
+    type: string
+    required: false
+    description: Shipping carrier (e.g., FedEx, UPS, DHL)
+  - name: estimatedDeliveryDate
+    type: DateTime
+    required: false
+    description: Estimated delivery date
+  - name: shippingAddress
+    type: Address
+    required: true
+    description: Destination address for the shipment
+---
+
+## Overview
+
+The Shipment entity is created when an order is confirmed. It listens for the `OrderConfirmed` event and initializes a new shipment to fulfill the order. This demonstrates an entity receiving events from another entity (Order).
+
+### Entity Properties
+<EntityPropertiesTable />
+
+## Event Handling
+
+When `OrderConfirmed` is received:
+1. A new Shipment record is created with status "Pending"
+2. The shipment is linked to the originating order
+3. The shipping address is copied from the order
+4. A `ShipmentCreated` event is emitted for downstream processing
+
+## Relationships
+
+* **Order:** Each shipment fulfills one `Order` (identified by `orderId`)
+* **Address:** Each shipment has a destination `Address`

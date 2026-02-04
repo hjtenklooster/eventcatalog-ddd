@@ -25,6 +25,7 @@ import { getCommands } from '@utils/collections/commands';
 import { getQueries } from '@utils/collections/queries';
 import { createNode } from './utils/utils';
 import { getConsumersOfMessage, getProducersOfMessage } from '@utils/collections/services';
+import { getEntityProducersOfMessage, getEntityConsumersOfMessage } from '@utils/collections/entities';
 import { getNodesAndEdgesForChannelChain } from './channel-node-graph';
 import { getChannelChain, isChannelsConnected } from '@utils/collections/channels';
 import { getChannels } from '@utils/collections/channels';
@@ -491,15 +492,17 @@ export const getNodesAndEdgesForConsumedMessage = ({
   target,
   mode = 'simple',
   channelMap,
+  entities,
 }: {
   message: CollectionEntry<CollectionMessageTypes>;
   targetChannels?: { id: string; version: string }[];
   services: CollectionEntry<'services'>[];
   channels: CollectionEntry<'channels'>[];
   currentNodes: Node[];
-  target: CollectionEntry<'services'>;
+  target: CollectionEntry<'services'> | CollectionEntry<'entities'>;
   mode?: 'simple' | 'full';
   channelMap?: Map<string, CollectionEntry<'channels'>[]>;
+  entities?: CollectionEntry<'entities'>[];
 }) => {
   let nodes = [] as Node[],
     edges = [] as any;
@@ -524,12 +527,13 @@ export const getNodesAndEdgesForConsumedMessage = ({
     })
   );
 
-  // Render the target node
+  // Render the target node (can be service or entity)
+  const isTargetEntity = target.collection === 'entities';
   nodes.push(
     createNode({
       id: generateIdForNode(target),
       type: target.collection,
-      data: { mode, service: { ...target.data } },
+      data: isTargetEntity ? { mode, entity: target } : { mode, service: { ...target.data } },
       position: { x: 0, y: 0 },
     })
   );
@@ -774,6 +778,53 @@ export const getNodesAndEdgesForConsumedMessage = ({
     }
   }
 
+  // Process entity producers for the message (entities don't have channel configuration)
+  if (entities) {
+    const entityProducers = getEntityProducersOfMessage(entities, message);
+    // Filter out the target if it's an entity to avoid self-reference
+    const filteredEntityProducers = entityProducers.filter(
+      (entity) => !(isTargetEntity && entity.data.id === target.data.id && entity.data.version === target.data.version)
+    );
+
+    for (const entityProducer of filteredEntityProducers) {
+      const entityProducerId = generateIdForNode(entityProducer);
+
+      // Create the entity producer node
+      nodes.push(
+        createNode({
+          id: entityProducerId,
+          type: 'entities',
+          data: { mode, entity: entityProducer },
+          position: { x: 0, y: 0 },
+        })
+      );
+
+      // Connect entity producer to message (entities "emit" events)
+      edges.push(
+        createEdge({
+          id: generatedIdForEdge(entityProducer, message),
+          source: entityProducerId,
+          target: messageId,
+          label: 'emits',
+          data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
+        })
+      );
+
+      // If target has no channels defined, connect message directly to target
+      if (!targetHasDefinedChannels && hydratedChannelsFromMessageToTarget.length === 0) {
+        edges.push(
+          createEdge({
+            id: generatedIdForEdge(message, target),
+            source: messageId,
+            target: generateIdForNode(target),
+            label: getEdgeLabelForMessageAsSource(message),
+            data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
+          })
+        );
+      }
+    }
+  }
+
   // Remove any nodes that are already in the current nodes (already on the UI)
   nodes = nodes.filter((node) => !currentNodes.find((n) => n.id === node.id));
 
@@ -797,6 +848,7 @@ export const getNodesAndEdgesForProducedMessage = ({
   source,
   mode = 'simple',
   channelMap,
+  entities,
 }: {
   message: CollectionEntry<CollectionMessageTypes>;
   sourceChannels?: { id: string; version: string }[];
@@ -804,9 +856,10 @@ export const getNodesAndEdgesForProducedMessage = ({
   channels: CollectionEntry<'channels'>[];
   currentNodes: Node[];
   currentEdges: Edge[];
-  source: CollectionEntry<'services'>;
+  source: CollectionEntry<'services'> | CollectionEntry<'entities'>;
   mode?: 'simple' | 'full';
   channelMap?: Map<string, CollectionEntry<'channels'>[]>;
+  entities?: CollectionEntry<'entities'>[];
 }) => {
   let nodes = [] as Node[],
     edges = [] as any;
@@ -831,12 +884,13 @@ export const getNodesAndEdgesForProducedMessage = ({
     })
   );
 
-  // Render the producer node
+  // Render the producer node (can be service or entity)
+  const isSourceEntity = source.collection === 'entities';
   nodes.push(
     createNode({
       id: generateIdForNode(source),
       type: source.collection,
-      data: { mode, service: { ...source.data } },
+      data: isSourceEntity ? { mode, entity: source } : { mode, service: { ...source.data } },
       position: { x: 0, y: 0 },
     })
   );
@@ -847,7 +901,7 @@ export const getNodesAndEdgesForProducedMessage = ({
       id: generatedIdForEdge(source, message),
       source: generateIdForNode(source),
       target: messageId,
-      label: getEdgeLabelForServiceAsTarget(message),
+      label: isSourceEntity ? 'emits' : getEdgeLabelForServiceAsTarget(message),
       data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
     })
   );
@@ -1056,6 +1110,40 @@ export const getNodesAndEdgesForProducedMessage = ({
           );
         }
       }
+    }
+  }
+
+  // Process entity consumers for the message (entities don't have channel configuration)
+  if (entities) {
+    const entityConsumers = getEntityConsumersOfMessage(entities, message);
+    // Filter out the source if it's an entity to avoid self-reference
+    const filteredEntityConsumers = entityConsumers.filter(
+      (entity) => !(isSourceEntity && entity.data.id === source.data.id && entity.data.version === source.data.version)
+    );
+
+    for (const entityConsumer of filteredEntityConsumers) {
+      const entityConsumerId = generateIdForNode(entityConsumer);
+
+      // Create the entity consumer node
+      nodes.push(
+        createNode({
+          id: entityConsumerId,
+          type: 'entities',
+          data: { mode, entity: entityConsumer },
+          position: { x: 0, y: 0 },
+        })
+      );
+
+      // Connect message to entity consumer (entities "subscribe to" events)
+      edges.push(
+        createEdge({
+          id: generatedIdForEdge(message, entityConsumer),
+          source: messageId,
+          target: entityConsumerId,
+          label: 'subscribes to',
+          data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
+        })
+      );
     }
   }
 

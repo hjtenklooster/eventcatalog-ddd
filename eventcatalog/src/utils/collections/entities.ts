@@ -1,6 +1,7 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import path from 'path';
+import semver from 'semver';
 import utils from '@eventcatalog/sdk';
 import { createVersionedMap, satisfies, findInMap } from './util';
 import type { CollectionMessageTypes } from '@types';
@@ -143,4 +144,52 @@ export const getEntities = async ({ getAllVersions = true }: Props = {}): Promis
   memoryCache[cacheKey] = processedEntities;
 
   return processedEntities;
+};
+
+/**
+ * Find entities that produce (send) a given message.
+ * Mirrors getProducersOfMessage from services.ts
+ */
+export const getEntityProducersOfMessage = (
+  entities: CollectionEntry<'entities'>[],
+  message: CollectionEntry<'events'> | CollectionEntry<'commands'> | CollectionEntry<'queries'>
+) => {
+  return entities.filter((entity) => {
+    return entity.data.sends?.some((send) => {
+      const idMatch = send.id === message.data.id;
+
+      // If no version specified in send, treat as 'latest'
+      if (!send.version) return idMatch;
+
+      // If version is 'latest', match any version
+      if (send.version === 'latest') return idMatch;
+
+      // Use semver to compare versions
+      return idMatch && semver.satisfies(message.data.version, send.version);
+    });
+  });
+};
+
+/**
+ * Find entities that consume (receive) a given message.
+ * Mirrors getConsumersOfMessage from services.ts
+ */
+export const getEntityConsumersOfMessage = (
+  entities: CollectionEntry<'entities'>[],
+  message: CollectionEntry<'events'> | CollectionEntry<'commands'> | CollectionEntry<'queries'>
+) => {
+  return entities.filter((entity) => {
+    return entity.data.receives?.some((receive) => {
+      const idMatch = receive.id === message.data.id;
+
+      // If no version specified in receive, treat as 'latest'
+      if (!receive.version) return idMatch;
+
+      // If version is 'latest', match any version
+      if (receive.version === 'latest') return idMatch;
+
+      // Use semver to compare versions
+      return idMatch && semver.satisfies(message.data.version, receive.version);
+    });
+  });
 };

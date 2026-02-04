@@ -14,6 +14,20 @@ export const mockServices = [
       ],
     },
   },
+  {
+    id: 'NotificationService-1.0.0',
+    slug: 'NotificationService',
+    collection: 'services',
+    data: {
+      id: 'NotificationService',
+      name: 'Notification Service',
+      version: '1.0.0',
+      // Receives OrderCreated (same as Order entity sends)
+      receives: [{ id: 'OrderCreated', version: '1.0.0' }],
+      // Sends CreateOrder (same as Order entity receives)
+      sends: [{ id: 'CreateOrder', version: '1.0.0' }],
+    },
+  },
 ];
 
 export const mockDomains = [
@@ -88,6 +102,18 @@ export const mockQueries = [
     data: {
       id: 'GetOrder',
       name: 'Get Order',
+      version: '1.0.0',
+    },
+  },
+];
+
+export const mockChannels = [
+  {
+    id: 'OrderChannel-1.0.0',
+    slug: 'OrderChannel',
+    collection: 'channels',
+    data: {
+      id: 'OrderChannel',
       version: '1.0.0',
     },
   },

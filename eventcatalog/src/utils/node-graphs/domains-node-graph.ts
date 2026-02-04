@@ -249,7 +249,7 @@ export const getNodesAndEdges = async ({
     .map((entity) => findInMap(entityMap, entity.id, entity.version))
     .filter((e): e is any => !!e)
     // Only include entities that participate in messaging
-    .filter((e) => (e.data.sends?.length > 0 || e.data.receives?.length > 0))
+    .filter((e) => e.data.sends?.length > 0 || e.data.receives?.length > 0)
     .map((ent) => ({ id: ent.data.id, version: ent.data.version }));
 
   // Get all the nodes for everything
