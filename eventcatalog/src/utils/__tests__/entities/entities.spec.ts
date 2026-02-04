@@ -1,7 +1,7 @@
 import type { ContentCollectionKey } from 'astro:content';
 import { expect, describe, it, vi } from 'vitest';
 import { mockServices, mockEntities, mockDomains, mockEvents, mockCommands, mockQueries } from './mocks';
-import { getEntities } from '@utils/collections/entities';
+import { getEntities, getEntityProducersOfMessage, getEntityConsumersOfMessage } from '@utils/collections/entities';
 
 vi.mock('astro:content', async (importOriginal) => {
   return {
@@ -101,6 +101,124 @@ describe('Entities', () => {
       expect(simpleEntity.data.receives).toEqual([]);
       expect(simpleEntity.data.sendsRaw).toEqual([]);
       expect(simpleEntity.data.receivesRaw).toEqual([]);
+    });
+  });
+
+  describe('getEntityProducersOfMessage', () => {
+    it('should find entity that sends a message with matching version', () => {
+      const message = mockEvents[0] as any; // OrderCreated 1.0.0
+      const producers = getEntityProducersOfMessage(mockEntities as any, message);
+
+      expect(producers).toHaveLength(1);
+      expect(producers[0].data.id).toBe('Order');
+    });
+
+    it('should return empty array when no entity produces the message', () => {
+      const message = mockQueries[0] as any; // GetOrder - not produced by any entity
+      const producers = getEntityProducersOfMessage(mockEntities as any, message);
+
+      expect(producers).toHaveLength(0);
+    });
+
+    it('should match when entity sends with version "latest"', () => {
+      const entityWithLatest = {
+        ...mockEntities[1],
+        data: {
+          ...mockEntities[1].data,
+          sends: [{ id: 'OrderCreated', version: 'latest' }],
+        },
+      };
+      const message = mockEvents[0] as any; // OrderCreated 1.0.0
+      const producers = getEntityProducersOfMessage([entityWithLatest] as any, message);
+
+      expect(producers).toHaveLength(1);
+    });
+
+    it('should match when entity sends without version (treated as latest)', () => {
+      const entityWithoutVersion = {
+        ...mockEntities[1],
+        data: {
+          ...mockEntities[1].data,
+          sends: [{ id: 'OrderCreated' }], // no version
+        },
+      };
+      const message = mockEvents[0] as any; // OrderCreated 1.0.0
+      const producers = getEntityProducersOfMessage([entityWithoutVersion] as any, message);
+
+      expect(producers).toHaveLength(1);
+    });
+
+    it('should match semver ranges', () => {
+      const entityWithSemver = {
+        ...mockEntities[1],
+        data: {
+          ...mockEntities[1].data,
+          sends: [{ id: 'OrderCreated', version: '^1.0.0' }],
+        },
+      };
+      const message = { ...mockEvents[0], data: { ...mockEvents[0].data, version: '1.2.3' } } as any;
+      const producers = getEntityProducersOfMessage([entityWithSemver] as any, message);
+
+      expect(producers).toHaveLength(1);
+    });
+  });
+
+  describe('getEntityConsumersOfMessage', () => {
+    it('should find entity that receives a message with matching version', () => {
+      const message = mockCommands[0] as any; // CreateOrder 1.0.0
+      const consumers = getEntityConsumersOfMessage(mockEntities as any, message);
+
+      expect(consumers).toHaveLength(1);
+      expect(consumers[0].data.id).toBe('Order');
+    });
+
+    it('should return empty array when no entity consumes the message', () => {
+      const message = mockEvents[0] as any; // OrderCreated - not received by the Order entity
+      const consumers = getEntityConsumersOfMessage(mockEntities as any, message);
+
+      expect(consumers).toHaveLength(0);
+    });
+
+    it('should match when entity receives with version "latest"', () => {
+      const entityWithLatest = {
+        ...mockEntities[1],
+        data: {
+          ...mockEntities[1].data,
+          receives: [{ id: 'CreateOrder', version: 'latest' }],
+        },
+      };
+      const message = mockCommands[0] as any; // CreateOrder 1.0.0
+      const consumers = getEntityConsumersOfMessage([entityWithLatest] as any, message);
+
+      expect(consumers).toHaveLength(1);
+    });
+
+    it('should match when entity receives without version (treated as latest)', () => {
+      const entityWithoutVersion = {
+        ...mockEntities[1],
+        data: {
+          ...mockEntities[1].data,
+          receives: [{ id: 'CreateOrder' }], // no version
+        },
+      };
+      const message = mockCommands[0] as any; // CreateOrder 1.0.0
+      const consumers = getEntityConsumersOfMessage([entityWithoutVersion] as any, message);
+
+      expect(consumers).toHaveLength(1);
+    });
+
+    it('should match semver ranges', () => {
+      const entityWithSemver = {
+        ...mockEntities[1],
+        data: {
+          ...mockEntities[1].data,
+          receives: [{ id: 'CreateOrder', version: '^1.0.0' }],
+        },
+      };
+      const message = { ...mockCommands[0], data: { ...mockCommands[0].data, version: '1.5.0' } } as any;
+      const consumers = getEntityConsumersOfMessage([entityWithSemver] as any, message);
+
+      expect(consumers).toHaveLength(1);
     });
   });
 });

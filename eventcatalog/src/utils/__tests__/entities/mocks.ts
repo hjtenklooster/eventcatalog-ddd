@@ -14,6 +14,20 @@ export const mockServices = [
       ],
     },
   },
+  {
+    id: 'NotificationService-1.0.0',
+    slug: 'NotificationService',
+    collection: 'services',
+    data: {
+      id: 'NotificationService',
+      name: 'Notification Service',
+      version: '1.0.0',
+      // Receives OrderCreated (same as Order entity sends)
+      receives: [{ id: 'OrderCreated', version: '1.0.0' }],
+      // Sends CreateOrder (same as Order entity receives)
+      sends: [{ id: 'CreateOrder', version: '1.0.0' }],
+    },
+  },
 ];
 
 export const mockDomains = [
@@ -93,6 +107,18 @@ export const mockQueries = [
   },
 ];
 
+export const mockChannels = [
+  {
+    id: 'OrderChannel-1.0.0',
+    slug: 'OrderChannel',
+    collection: 'channels',
+    data: {
+      id: 'OrderChannel',
+      version: '1.0.0',
+    },
+  },
+];
+
 export const mockEntities = [
   {
     id: 'Supplier',
@@ -142,6 +168,44 @@ export const mockEntities = [
       name: 'Simple Entity',
       version: '1.0.0',
       // No sends/receives - testing entities without messaging
+    },
+  },
+  {
+    id: 'Payment-1.0.0',
+    slug: 'Payment',
+    collection: 'entities',
+    data: {
+      id: 'Payment',
+      name: 'Payment',
+      version: '1.0.0',
+      identifier: 'paymentId',
+      aggregateRoot: true,
+      // Entity sends OrderShipped to OrderChannel (different from Order entity's sends)
+      sends: [
+        {
+          id: 'OrderShipped',
+          version: '1.0.0',
+          to: [
+            {
+              id: 'OrderChannel',
+              version: '1.0.0',
+            },
+          ],
+        },
+      ],
+      // Entity receives ShipOrder from OrderChannel (different from Order entity's receives)
+      receives: [
+        {
+          id: 'ShipOrder',
+          version: '1.0.0',
+          from: [
+            {
+              id: 'OrderChannel',
+              version: '1.0.0',
+            },
+          ],
+        },
+      ],
     },
   },
 ];

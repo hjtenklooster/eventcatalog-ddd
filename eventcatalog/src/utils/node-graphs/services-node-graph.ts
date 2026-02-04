@@ -64,13 +64,14 @@ export const getNodesAndEdges = async ({
     edges = [] as any;
 
   // Fetch all collections in parallel
-  const [services, events, commands, queries, channels, containers] = await Promise.all([
+  const [services, events, commands, queries, channels, containers, entities] = await Promise.all([
     getCollection('services'),
     getCollection('events'),
     getCollection('commands'),
     getCollection('queries'),
     getCollection('channels'),
     getCollection('containers'),
+    getCollection('entities'),
   ]);
 
   const service = services.find((service) => service.data.id === id && service.data.version === version);
@@ -133,6 +134,7 @@ export const getNodesAndEdges = async ({
         mode,
         channels,
         channelMap,
+        entities,
       });
 
       nodes.push(...consumedMessageNodes);
@@ -225,6 +227,7 @@ export const getNodesAndEdges = async ({
         mode,
         channels,
         channelMap,
+        entities,
       });
 
       nodes.push(...producedMessageNodes);
