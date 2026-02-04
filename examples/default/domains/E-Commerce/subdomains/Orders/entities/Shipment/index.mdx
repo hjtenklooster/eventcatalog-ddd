@@ -8,9 +8,15 @@ summary: Represents a shipment created to fulfill an order.
 receives:
   - id: OrderConfirmed
     version: 0.0.1
+    from:
+      - id: shipping-domain-eventbus
+        version: 1.0.0
 sends:
   - id: ShipmentCreated
     version: 0.0.1
+    to:
+      - id: shipping-domain-eventbus
+        version: 1.0.0
 properties:
   - name: shipmentId
     type: UUID
@@ -44,6 +50,9 @@ properties:
     type: Address
     required: true
     description: Destination address for the shipment
+    references: Address
+    referencesIdentifier: addressId
+    relationType: hasOne
 ---
 
 ## Overview

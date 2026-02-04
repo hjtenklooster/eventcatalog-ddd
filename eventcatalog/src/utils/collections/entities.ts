@@ -164,8 +164,8 @@ export const getEntityProducersOfMessage = (
       // If version is 'latest', match any version
       if (send.version === 'latest') return idMatch;
 
-      // Use semver to compare versions
-      return idMatch && semver.satisfies(message.data.version, send.version);
+      // Use satisfies helper to handle non-strict versions (v1, 1, etc.)
+      return idMatch && satisfies(message.data.version, send.version);
     });
   });
 };
@@ -188,8 +188,8 @@ export const getEntityConsumersOfMessage = (
       // If version is 'latest', match any version
       if (receive.version === 'latest') return idMatch;
 
-      // Use semver to compare versions
-      return idMatch && semver.satisfies(message.data.version, receive.version);
+      // Use satisfies helper to handle non-strict versions (v1, 1, etc.)
+      return idMatch && satisfies(message.data.version, receive.version);
     });
   });
 };
