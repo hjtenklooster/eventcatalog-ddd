@@ -26,7 +26,8 @@ export type CollectionType =
   | 'domains'
   | 'flows'
   | 'containers'
-  | 'data-products';
+  | 'data-products'
+  | 'entities';
 
 export interface DiscoverTableData {
   collection: string;
@@ -35,6 +36,7 @@ export interface DiscoverTableData {
   hasSpecifications?: boolean;
   hasOwners?: boolean;
   hasRepository?: boolean;
+  isAggregateRoot?: boolean;
   isDeprecated?: boolean;
   hasDataDependencies?: boolean;
   hasInputs?: boolean;
@@ -213,6 +215,7 @@ export function DiscoverTable<T extends DiscoverTableData>({
           if (prop === 'hasRepository' && !row.hasRepository) return false;
           if (prop === 'hasDataDependencies' && !row.hasDataDependencies) return false;
           if (prop === 'isDeprecated' && !row.isDeprecated) return false;
+          if (prop === 'isAggregateRoot' && !row.isAggregateRoot) return false;
 
           // Message-specific checks
           if (prop === 'hasProducers') {

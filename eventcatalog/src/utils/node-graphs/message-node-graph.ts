@@ -275,7 +275,9 @@ const getNodesAndEdges = async ({
     const serviceOrEntityConsumer = consumer as CollectionEntry<'services'> | CollectionEntry<'entities'>;
 
     // Is the consumer receiving this message from a channel?
-    const consumerConfigurationForMessage = serviceOrEntityConsumer.data.receives?.find((receive) => receive.id === message.data.id);
+    const consumerConfigurationForMessage = serviceOrEntityConsumer.data.receives?.find(
+      (receive) => receive.id === message.data.id
+    );
     const consumerChannelConfiguration = consumerConfigurationForMessage?.from ?? [];
 
     const consumerHasChannels = consumerChannelConfiguration.length > 0;
@@ -323,7 +325,8 @@ const getNodesAndEdges = async ({
       const producerChannels = allProducersWithChannels
         .map((producer) => producer.data.sends?.find((send) => send.id === message.data.id)?.to ?? [])
         .flat();
-      const consumerChannels = serviceOrEntityConsumer.data.receives?.find((receive) => receive.id === message.data.id)?.from ?? [];
+      const consumerChannels =
+        serviceOrEntityConsumer.data.receives?.find((receive) => receive.id === message.data.id)?.from ?? [];
 
       for (const producerChannel of producerChannels) {
         const producerChannelValue = findInMap(
@@ -332,12 +335,19 @@ const getNodesAndEdges = async ({
           producerChannel.version
         ) as CollectionEntry<'channels'>;
 
+        // Skip if producer channel not found in catalog
+        if (!producerChannelValue) continue;
+
         for (const consumerChannel of consumerChannels) {
           const consumerChannelValue = findInMap(
             channelMap,
             consumerChannel.id,
             consumerChannel.version
           ) as CollectionEntry<'channels'>;
+
+          // Skip if consumer channel not found in catalog
+          if (!consumerChannelValue) continue;
+
           const channelChainToRender = getChannelChain(producerChannelValue, consumerChannelValue, channels);
 
           // If there is a chain between them we need to render them al
