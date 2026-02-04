@@ -1,8 +1,8 @@
 ---
-import { QueueListIcon, RectangleGroupIcon, BoltIcon, ChatBubbleLeftIcon, CubeIcon } from '@heroicons/react/24/outline';
+import { QueueListIcon, RectangleGroupIcon, BoltIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import ServerIcon from '@heroicons/react/24/outline/ServerIcon';
 import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
-import { DatabaseIcon } from 'lucide-react';
+import { DatabaseIcon, BoxIcon, CubeIcon } from 'lucide-react';
 import { getCommands } from '@utils/collections/commands';
 import { getDomains, getDomainsForService } from '@utils/collections/domains';
 import { getFlows } from '@utils/collections/flows';
@@ -11,6 +11,7 @@ import { getServices } from '@utils/collections/services';
 import { getQueries } from '@utils/collections/queries';
 import { getContainers } from '@utils/collections/containers';
 import { getDataProducts } from '@utils/collections/data-products';
+import { getEntities } from '@utils/collections/entities';
 import { getUsers } from '@utils/collections/users';
 import { getTeams } from '@utils/collections/teams';
 import { getChannels } from '@utils/collections/channels';
@@ -34,6 +35,7 @@ const domains = await getDomains({ getAllVersions: false });
 const flows = await getFlows();
 const containers = await getContainers();
 const dataProducts = await getDataProducts();
+const entities = await getEntities();
 const channels = await getChannels();
 const users = await getUsers();
 const teams = await getTeams();
@@ -121,6 +123,14 @@ const typeConfig: Record<
       { id: 'isDeprecated', label: 'Is Deprecated' },
     ],
   },
+  entities: {
+    label: 'Entities',
+    propertyOptions: [
+      { id: 'hasOwners', label: 'Has Owners' },
+      { id: 'isAggregateRoot', label: 'Is Aggregate Root' },
+      { id: 'isDeprecated', label: 'Is Deprecated' },
+    ],
+  },
 };
 
 const currentTypeConfig = typeConfig[type] || typeConfig.events;
@@ -201,6 +211,15 @@ const tabs = [
     enabled: flows.length > 0,
     visible: flows.length > 0,
   },
+  {
+    label: `Entities (${entities.length})`,
+    href: buildUrl('/discover/entities'),
+    isActive: type === 'entities',
+    icon: BoxIcon,
+    activeColor: 'purple',
+    enabled: entities.length > 0,
+    visible: entities.length > 0,
+  },
 ];
 
 // Map data to match the expected structure for the table
@@ -253,6 +272,7 @@ const allCollections = [
   ...commands.map((c) => ({ ...c, collection: 'commands' })),
   ...queries.map((q) => ({ ...q, collection: 'queries' })),
   ...dataProducts.map((dp) => ({ ...dp, collection: 'data-products' })),
+  ...entities.map((e) => ({ ...e, collection: 'entities' })),
 ];
 
 // Create a map for quick lookup by id
@@ -310,6 +330,8 @@ const tableData = enrichedData.map((d: any) => ({
   // Data-product-specific properties
   hasInputs: type === 'data-products' ? (d.data?.inputs || []).length > 0 : false,
   hasOutputs: type === 'data-products' ? (d.data?.outputs || []).length > 0 : false,
+  // Entity-specific properties
+  isAggregateRoot: type === 'entities' ? d.data?.aggregateRoot === true : false,
   isDeprecated: d.data?.deprecated === true || (typeof d.data?.deprecated === 'object' && d.data?.deprecated !== null),
   data: {
     id: d.data.id,

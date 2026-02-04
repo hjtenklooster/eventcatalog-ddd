@@ -15,22 +15,25 @@ import { getMessages } from '@utils/collections/messages';
 import { getDomains } from '@utils/collections/domains';
 import { getServices } from '@utils/collections/services';
 import { getFlows } from '@utils/collections/flows';
+import { getEntities } from '@utils/collections/entities';
 import VerticalSideBarLayout from '@layouts/VerticalSideBarLayout.astro';
-import { BookOpenText, Workflow, TableProperties, BookUser, Zap, Terminal, Code2, FileJson } from 'lucide-react';
+import { BookOpenText, Workflow, TableProperties, BookUser, Zap, Terminal, Code2, FileJson, Box } from 'lucide-react';
 
 const { commands = [], events = [], queries = [] } = await getMessages({ getAllVersions: false });
 const messages = [...events, ...queries, ...commands];
 const domains = await getDomains({ getAllVersions: false });
 const services = await getServices({ getAllVersions: false });
 const flows = await getFlows({ getAllVersions: false });
+const entities = await getEntities({ getAllVersions: false });
 
 // Check if catalog has content
-const hasContent = domains.length > 0 || services.length > 0 || messages.length > 0 || flows.length > 0;
+const hasContent = domains.length > 0 || services.length > 0 || messages.length > 0 || flows.length > 0 || entities.length > 0;
 
 const getDefaultUrl = (route: string, defaultValue: string) => {
   if (domains.length > 0) return buildUrl(`/${route}/domains/${domains[0].data.id}/${domains[0].data.latestVersion}`);
   if (services.length > 0) return buildUrl(`/${route}/services/${services[0].data.id}/${services[0].data.latestVersion}`);
   if (flows.length > 0) return buildUrl(`/${route}/flows/${flows[0].data.id}/${flows[0].data.latestVersion}`);
+  if (entities.length > 0) return buildUrl(`/${route}/entities/${entities[0].data.id}/${entities[0].data.latestVersion}`);
   return buildUrl(defaultValue);
 };
 
@@ -82,6 +85,18 @@ const topTiles = [
     textColor: 'text-[rgb(var(--ec-accent))]',
     emptyText: 'No flows yet',
     addHref: 'https://www.eventcatalog.dev/docs/flows',
+  },
+  {
+    title: 'Entities',
+    count: entities.length,
+    description: 'Domain entities',
+    href: buildUrl('/discover/entities'),
+    icon: Box,
+    bgColor: 'bg-purple-500',
+    borderColor: 'border-purple-200',
+    textColor: 'text-purple-600',
+    emptyText: 'No entities yet',
+    addHref: 'https://www.eventcatalog.dev/docs/entities',
   },
 ];
 

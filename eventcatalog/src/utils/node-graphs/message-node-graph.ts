@@ -275,7 +275,9 @@ const getNodesAndEdges = async ({
     const serviceOrEntityConsumer = consumer as CollectionEntry<'services'> | CollectionEntry<'entities'>;
 
     // Is the consumer receiving this message from a channel?
-    const consumerConfigurationForMessage = serviceOrEntityConsumer.data.receives?.find((receive) => receive.id === message.data.id);
+    const consumerConfigurationForMessage = serviceOrEntityConsumer.data.receives?.find(
+      (receive) => receive.id === message.data.id
+    );
     const consumerChannelConfiguration = consumerConfigurationForMessage?.from ?? [];
 
     const consumerHasChannels = consumerChannelConfiguration.length > 0;
@@ -323,7 +325,8 @@ const getNodesAndEdges = async ({
       const producerChannels = allProducersWithChannels
         .map((producer) => producer.data.sends?.find((send) => send.id === message.data.id)?.to ?? [])
         .flat();
-      const consumerChannels = serviceOrEntityConsumer.data.receives?.find((receive) => receive.id === message.data.id)?.from ?? [];
+      const consumerChannels =
+        serviceOrEntityConsumer.data.receives?.find((receive) => receive.id === message.data.id)?.from ?? [];
 
       for (const producerChannel of producerChannels) {
         const producerChannelValue = findInMap(

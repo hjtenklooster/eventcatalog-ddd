@@ -363,6 +363,13 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     pages: dataProducts.map((dataProduct) => `data-product:${dataProduct.data.id}:${dataProduct.data.version}`),
   });
 
+  const entitiesList = createLeaf(entities, {
+    type: 'item',
+    title: 'Entities',
+    icon: 'Box',
+    pages: entities.map((entity) => `entity:${entity.data.id}:${entity.data.version}`),
+  });
+
   const designsList = createLeaf(designs, {
     type: 'item',
     title: 'Designs',
@@ -420,6 +427,7 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
   const allChildrenKeys = [
     'list:domains',
     'list:services',
+    'list:entities',
     'list:messages',
     'list:channels',
     'list:flows',
@@ -431,6 +439,7 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
   const allChildrenNodes = [
     domainsList,
     servicesList,
+    entitiesList,
     messagesList,
     channelList,
     flowsList,
@@ -455,6 +464,7 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
   const allNodes: Record<string, NavNode> = {
     ...(domainsList ? { 'list:domains': domainsList } : {}),
     ...(servicesList ? { 'list:services': servicesList } : {}),
+    ...(entitiesList ? { 'list:entities': entitiesList } : {}),
     ...(eventsList ? { 'list:events': eventsList } : {}),
     ...(commandsList ? { 'list:commands': commandsList } : {}),
     ...(queriesList ? { 'list:queries': queriesList } : {}),

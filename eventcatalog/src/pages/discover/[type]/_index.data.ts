@@ -12,15 +12,27 @@ export class Page extends HybridPage {
     const { getFlows } = await import('@utils/collections/flows');
     const { getServices } = await import('@utils/collections/services');
     const { getDataProducts } = await import('@utils/collections/data-products');
+    const { getEntities } = await import('@utils/collections/entities');
 
     const loaders = {
       ...pageDataLoader,
       flows: getFlows,
       services: getServices,
       'data-products': getDataProducts,
+      entities: getEntities,
     };
 
-    const itemTypes = ['events', 'commands', 'queries', 'domains', 'services', 'flows', 'containers', 'data-products'] as const;
+    const itemTypes = [
+      'events',
+      'commands',
+      'queries',
+      'domains',
+      'services',
+      'flows',
+      'containers',
+      'data-products',
+      'entities',
+    ] as const;
     const allItems = await Promise.all(itemTypes.map((type) => loaders[type]()));
 
     return allItems.flatMap((items, index) => ({
@@ -44,12 +56,14 @@ export class Page extends HybridPage {
     const { getFlows } = await import('@utils/collections/flows');
     const { getServices } = await import('@utils/collections/services');
     const { getDataProducts } = await import('@utils/collections/data-products');
+    const { getEntities } = await import('@utils/collections/entities');
 
     const loaders = {
       ...pageDataLoader,
       flows: getFlows,
       services: getServices,
       'data-products': getDataProducts,
+      entities: getEntities,
     };
 
     // @ts-ignore

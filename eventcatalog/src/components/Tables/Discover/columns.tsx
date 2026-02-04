@@ -12,10 +12,11 @@ import {
   CubeIcon,
 } from '@heroicons/react/24/solid';
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
-import { DatabaseIcon } from 'lucide-react';
+import { DatabaseIcon, BoxIcon } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { buildUrl } from '@utils/url-builder';
 import { getColorAndIconForCollection } from '@utils/collections/icons';
+import { collectionToResourceMap } from '@utils/collections/util';
 import FavoriteButton from '@components/FavoriteButton';
 import type { DiscoverTableData, CollectionType } from './DiscoverTable';
 import type { TableConfiguration } from '@types';
@@ -104,7 +105,8 @@ const createActionsColumn = (collectionType: CollectionType, tableConfiguration:
       const item = info.row.original;
       const href = buildUrl(`/docs/${item.collection}/${item.data.id}/${item.data.version}`);
       const nodeKey = `${item.collection}-${item.data.id}-${item.data.version}`;
-      const badgeLabel = collectionType.charAt(0).toUpperCase() + collectionType.slice(1, -1);
+      const singular = collectionToResourceMap[collectionType] || collectionType.slice(0, -1);
+      const badgeLabel = singular.charAt(0).toUpperCase() + singular.slice(1);
 
       return (
         <div className="flex items-center gap-0.5">
@@ -601,6 +603,64 @@ export const getDataProductColumns = (tableConfiguration: TableConfiguration) =>
 ];
 
 // ============================================================================
+// ENTITY COLUMNS
+// ============================================================================
+export const getEntityColumns = (tableConfiguration: TableConfiguration) => [
+  columnHelper.accessor('data.name', {
+    id: 'name',
+    header: () => <span>{tableConfiguration?.columns?.name?.label || 'Entity'}</span>,
+    cell: (info) => {
+      const item = info.row.original;
+      const isLatestVersion = item.data.version === item.data.latestVersion;
+      return (
+        <a
+          href={buildUrl(`/docs/${item.collection}/${item.data.id}/${item.data.version}`)}
+          className="group inline-flex items-center gap-2 hover:text-[rgb(var(--ec-accent))] transition-colors"
+        >
+          <BoxIcon className="h-4 w-4 text-purple-500 flex-shrink-0" />
+          <span className="text-sm font-semibold text-[rgb(var(--ec-page-text))] group-hover:text-[rgb(var(--ec-accent))]">
+            {item.data.name}
+          </span>
+          {!isLatestVersion && <span className="text-xs text-[rgb(var(--ec-icon-color))]">v{item.data.version}</span>}
+        </a>
+      );
+    },
+    meta: {
+      filterVariant: 'name',
+    },
+  }),
+  createSummaryColumn(tableConfiguration),
+  columnHelper.accessor('data.receives', {
+    id: 'receives',
+    header: () => (
+      <span className="flex items-center gap-1">
+        <ArrowDownIcon className="w-3.5 h-3.5" />
+        Receives
+      </span>
+    ),
+    cell: (info) => <CollectionListCell items={info.getValue()} />,
+    meta: {
+      showFilter: false,
+    },
+  }),
+  columnHelper.accessor('data.sends', {
+    id: 'sends',
+    header: () => (
+      <span className="flex items-center gap-1">
+        <ArrowUpIcon className="w-3.5 h-3.5" />
+        Sends
+      </span>
+    ),
+    cell: (info) => <CollectionListCell items={info.getValue()} />,
+    meta: {
+      showFilter: false,
+    },
+  }),
+  createBadgesColumn(tableConfiguration),
+  createActionsColumn('entities', tableConfiguration),
+];
+
+// ============================================================================
 // COLUMN GETTER BY COLLECTION TYPE
 // ============================================================================
 export const getDiscoverColumns = (collectionType: CollectionType, tableConfiguration: TableConfiguration) => {
@@ -621,6 +681,8 @@ export const getDiscoverColumns = (collectionType: CollectionType, tableConfigur
       return getContainerColumns(tableConfiguration);
     case 'data-products':
       return getDataProductColumns(tableConfiguration);
+    case 'entities':
+      return getEntityColumns(tableConfiguration);
     default:
       return [];
   }
