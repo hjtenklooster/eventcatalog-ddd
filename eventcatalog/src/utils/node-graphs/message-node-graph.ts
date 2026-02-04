@@ -335,12 +335,19 @@ const getNodesAndEdges = async ({
           producerChannel.version
         ) as CollectionEntry<'channels'>;
 
+        // Skip if producer channel not found in catalog
+        if (!producerChannelValue) continue;
+
         for (const consumerChannel of consumerChannels) {
           const consumerChannelValue = findInMap(
             channelMap,
             consumerChannel.id,
             consumerChannel.version
           ) as CollectionEntry<'channels'>;
+
+          // Skip if consumer channel not found in catalog
+          if (!consumerChannelValue) continue;
+
           const channelChainToRender = getChannelChain(producerChannelValue, consumerChannelValue, channels);
 
           // If there is a chain between them we need to render them al

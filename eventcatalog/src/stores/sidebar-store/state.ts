@@ -398,9 +398,13 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     pages: channels.map((channel) => `channel:${channel.data.id}:${channel.data.version}`),
   });
 
-  const messagesChildren = ['list:events', 'list:commands', 'list:queries'].filter(
-    (key, index) => [eventsList, commandsList, queriesList][index] !== undefined
-  );
+  const messagesChildren = [
+    { key: 'list:events', node: eventsList },
+    { key: 'list:commands', node: commandsList },
+    { key: 'list:queries', node: queriesList },
+  ]
+    .filter(({ node }) => node !== undefined)
+    .map(({ key }) => key);
 
   let messagesList;
   if (messagesChildren.length > 0) {
@@ -412,7 +416,12 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     };
   }
 
-  const peopleChildren = ['list:teams', 'list:users'].filter((key, index) => [teamsList, usersList][index] !== undefined);
+  const peopleChildren = [
+    { key: 'list:teams', node: teamsList },
+    { key: 'list:users', node: usersList },
+  ]
+    .filter(({ node }) => node !== undefined)
+    .map(({ key }) => key);
 
   let peopleList;
   if (peopleChildren.length > 0) {
@@ -424,32 +433,20 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     };
   }
 
-  const allChildrenKeys = [
-    'list:domains',
-    'list:services',
-    'list:entities',
-    'list:messages',
-    'list:channels',
-    'list:flows',
-    'list:containers',
-    'list:data-products',
-    'list:designs',
-    'list:people',
-  ];
-  const allChildrenNodes = [
-    domainsList,
-    servicesList,
-    entitiesList,
-    messagesList,
-    channelList,
-    flowsList,
-    containersList,
-    dataProductsList,
-    designsList,
-    peopleList,
+  const allChildren = [
+    { key: 'list:domains', node: domainsList },
+    { key: 'list:services', node: servicesList },
+    { key: 'list:entities', node: entitiesList },
+    { key: 'list:messages', node: messagesList },
+    { key: 'list:channels', node: channelList },
+    { key: 'list:flows', node: flowsList },
+    { key: 'list:containers', node: containersList },
+    { key: 'list:data-products', node: dataProductsList },
+    { key: 'list:designs', node: designsList },
+    { key: 'list:people', node: peopleList },
   ];
 
-  const validAllChildren = allChildrenKeys.filter((_, idx) => allChildrenNodes[idx] !== undefined);
+  const validAllChildren = allChildren.filter(({ node }) => node !== undefined).map(({ key }) => key);
 
   let allList;
   if (validAllChildren.length > 0) {

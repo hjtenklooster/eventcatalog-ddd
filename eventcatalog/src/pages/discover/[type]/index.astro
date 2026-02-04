@@ -275,13 +275,19 @@ const allCollections = [
   ...entities.map((e) => ({ ...e, collection: 'entities' })),
 ];
 
-// Create a map for quick lookup by id
-const collectionItemMap = new Map(allCollections.map((item) => [item.data.id, item]));
+// Create a map for quick lookup by collection:id (composite key to avoid collisions)
+const collectionItemMap = new Map(allCollections.map((item) => [`${item.collection}:${item.data.id}`, item]));
 
 // Helper to resolve a pointer to a collection item
 function resolvePointer(pointer: { id: string; version?: string }) {
   if (!pointer?.id) return null;
-  const item = collectionItemMap.get(pointer.id);
+  // Try each collection type to find the item (since pointers don't specify collection)
+  const collectionTypes = ['services', 'containers', 'channels', 'events', 'commands', 'queries', 'data-products', 'entities'];
+  let item = null;
+  for (const collectionType of collectionTypes) {
+    item = collectionItemMap.get(`${collectionType}:${pointer.id}`);
+    if (item) break;
+  }
   if (!item) return null;
   return {
     collection: item.collection,

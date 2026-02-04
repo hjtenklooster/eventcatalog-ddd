@@ -66,8 +66,12 @@ export class Page extends HybridPage {
       entities: getEntities,
     };
 
-    // @ts-ignore
-    const items = await loaders[type]();
+    type DiscoverPageTypes = keyof typeof loaders;
+    const loader = loaders[type as DiscoverPageTypes];
+    if (!loader) {
+      return null;
+    }
+    const items = await loader();
 
     return {
       type,
