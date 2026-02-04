@@ -1,0 +1,25 @@
+---
+id: ShipmentTrackingService
+name: Shipment Tracking Service
+version: 0.0.1
+summary: Service that tracks shipments by consuming events from the cross-account bus
+owners:
+  - dboyne
+receives:
+  - id: ShipmentCreated
+    version: 0.0.1
+    from:
+      - id: cross-account-bus
+        version: 1.0.0
+---
+
+## Overview
+
+The Shipment Tracking Service consumes `ShipmentCreated` events from the `cross-account-bus` to track shipments across the organization.
+
+This service is used to test the entity channel chain visualization, where:
+1. The **Shipment entity** sends `ShipmentCreated` to `shipping-domain-eventbus`
+2. `shipping-domain-eventbus` routes to `cross-account-bus`
+3. This service receives from `cross-account-bus`
+
+The visualizer should show the full channel chain: `Shipment → ShipmentCreated → shipping-domain-eventbus → cross-account-bus → ShipmentTrackingService`

@@ -817,46 +817,128 @@ export const getNodesAndEdgesForConsumedMessage = ({
         })
       );
 
-      // If entity has channels defined, render them
-      if (entityHasChannels) {
-        for (const entityChannel of entityProducerChannels) {
-          const channel = findInMap(map, entityChannel.id, entityChannel.version) as CollectionEntry<'channels'>;
+      const targetHasChannels = hydratedChannelsFromMessageToTarget.length > 0;
 
-          if (channel) {
-            // Create channel node
-            nodes.push(
-              createNode({
-                id: generateIdForNode(channel),
-                type: channel.collection,
-                data: { mode, channel: { ...channel.data, ...channel, id: channel.data.id } },
-                position: { x: 0, y: 0 },
-              })
-            );
+      // If neither entity producer nor target has channels, connect message directly to target
+      if (!entityHasChannels && !targetHasChannels) {
+        edges.push(
+          createEdge({
+            id: generatedIdForEdge(message, target),
+            source: messageId,
+            target: generateIdForNode(target),
+            label: getEdgeLabelForMessageAsSource(message),
+            data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
+          })
+        );
+        continue;
+      }
 
-            // Connect message to channel
-            edges.push(
-              createEdge({
-                id: generatedIdForEdge(message, channel),
-                source: messageId,
-                target: generateIdForNode(channel),
-                label: 'routes to',
-                data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
-              })
-            );
-          }
+      // If target has channels but entity producer doesn't, connect message to target channels directly
+      if (targetHasChannels && !entityHasChannels) {
+        for (const targetChannel of hydratedChannelsFromMessageToTarget) {
+          edges.push(
+            createEdge({
+              id: generatedIdForEdge(message, targetChannel),
+              source: messageId,
+              target: generateIdForNode(targetChannel),
+              label: 'routes to',
+              data: {
+                customColor: getColorFromString(message.data.id),
+                rootSourceAndTarget: {
+                  source: { id: generateIdForNode(message), collection: message.collection },
+                  target: { id: generateIdForNode(target), collection: target.collection },
+                },
+              },
+            })
+          );
         }
-      } else {
-        // If no channels and target has no channels, connect message directly to target
-        if (!targetHasDefinedChannels && hydratedChannelsFromMessageToTarget.length === 0) {
+        continue;
+      }
+
+      // Entity producer has channels - process each one
+      for (const entityChannel of entityProducerChannels) {
+        const channel = findInMap(map, entityChannel.id, entityChannel.version) as CollectionEntry<'channels'>;
+
+        // If channel not found, connect message directly to target
+        if (!channel) {
           edges.push(
             createEdge({
               id: generatedIdForEdge(message, target),
               source: messageId,
               target: generateIdForNode(target),
               label: getEdgeLabelForMessageAsSource(message),
-              data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
+              data: {
+                customColor: getColorFromString(message.data.id),
+                rootSourceAndTarget: {
+                  source: { id: generateIdForNode(message), collection: message.collection },
+                  target: { id: generateIdForNode(target), collection: target.collection },
+                },
+              },
             })
           );
+          continue;
+        }
+
+        // If target has no channels, connect message directly to target
+        if (!targetHasChannels) {
+          edges.push(
+            createEdge({
+              id: generatedIdForEdge(message, target),
+              source: messageId,
+              target: generateIdForNode(target),
+              label: getEdgeLabelForMessageAsSource(message),
+              data: {
+                customColor: getColorFromString(message.data.id),
+                rootSourceAndTarget: {
+                  source: { id: generateIdForNode(message), collection: message.collection },
+                  target: { id: generateIdForNode(target), collection: target.collection },
+                },
+              },
+            })
+          );
+          continue;
+        }
+
+        // Both entity producer and target have channels - try to find channel chain
+        for (const targetChannel of hydratedChannelsFromMessageToTarget) {
+          const channelChainToRender = getChannelChain(channel, targetChannel, channels);
+          if (channelChainToRender.length > 0) {
+            const { nodes: channelNodes, edges: channelEdges } = getNodesAndEdgesForChannelChain({
+              source: message,
+              target: target,
+              channelChain: channelChainToRender,
+              mode,
+            });
+
+            nodes.push(...channelNodes);
+            edges.push(...channelEdges);
+
+            break;
+          } else {
+            // No chain found - create target channel node and connect message to it
+            nodes.push(
+              createNode({
+                id: generateIdForNode(targetChannel),
+                type: targetChannel.collection,
+                data: { mode, channel: { ...targetChannel.data, ...targetChannel } },
+                position: { x: 0, y: 0 },
+              })
+            );
+            edges.push(
+              createEdge({
+                id: generatedIdForEdge(message, targetChannel),
+                source: messageId,
+                target: generateIdForNode(targetChannel),
+                label: 'routes to',
+                data: {
+                  rootSourceAndTarget: {
+                    source: { id: generateIdForNode(message), collection: message.collection },
+                    target: { id: generateIdForNode(targetChannel), collection: targetChannel.collection },
+                  },
+                },
+              })
+            );
+          }
         }
       }
     }
@@ -1176,13 +1258,27 @@ export const getNodesAndEdgesForProducedMessage = ({
       const entityConsumerChannels = entityConsumerConfig?.from ?? [];
       const entityHasChannels = entityConsumerChannels.length > 0;
 
-      // If entity has channels defined, render them
-      if (entityHasChannels) {
+      const sourceHasChannels = hydratedChannelsFromSourceToMessage.length > 0;
+
+      // If neither source nor entity consumer has channels, connect message directly to entity
+      if (!sourceHasChannels && !entityHasChannels) {
+        edges.push(
+          createEdge({
+            id: generatedIdForEdge(message, entityConsumer),
+            source: messageId,
+            target: entityConsumerId,
+            label: 'subscribes to',
+            data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
+          })
+        );
+        continue;
+      }
+
+      // If entity consumer has channels but source doesn't, connect message to entity channels directly
+      if (entityHasChannels && !sourceHasChannels) {
         for (const entityChannel of entityConsumerChannels) {
           const channel = findInMap(map, entityChannel.id, entityChannel.version) as CollectionEntry<'channels'>;
-
           if (channel) {
-            // Create channel node
             nodes.push(
               createNode({
                 id: generateIdForNode(channel),
@@ -1191,8 +1287,6 @@ export const getNodesAndEdgesForProducedMessage = ({
                 position: { x: 0, y: 0 },
               })
             );
-
-            // Connect message to channel
             edges.push(
               createEdge({
                 id: generatedIdForEdge(message, channel),
@@ -1202,8 +1296,6 @@ export const getNodesAndEdgesForProducedMessage = ({
                 data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
               })
             );
-
-            // Connect channel to entity
             edges.push(
               createEdge({
                 id: generatedIdForEdge(channel, entityConsumer),
@@ -1215,8 +1307,11 @@ export const getNodesAndEdgesForProducedMessage = ({
             );
           }
         }
-      } else {
-        // No channels - connect message directly to entity
+        continue;
+      }
+
+      // If source has channels but entity consumer doesn't, connect message directly to entity
+      if (sourceHasChannels && !entityHasChannels) {
         edges.push(
           createEdge({
             id: generatedIdForEdge(message, entityConsumer),
@@ -1226,6 +1321,83 @@ export const getNodesAndEdgesForProducedMessage = ({
             data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
           })
         );
+        continue;
+      }
+
+      // Both source and entity consumer have channels - process each entity channel
+      for (const entityChannel of entityConsumerChannels) {
+        const channel = findInMap(map, entityChannel.id, entityChannel.version) as CollectionEntry<'channels'>;
+
+        if (!channel) {
+          // Channel not found, connect message directly to entity
+          edges.push(
+            createEdge({
+              id: generatedIdForEdge(message, entityConsumer),
+              source: messageId,
+              target: entityConsumerId,
+              label: 'subscribes to',
+              data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
+            })
+          );
+          continue;
+        }
+
+        // Try to find channel chain from source channels to entity consumer channel
+        for (const sourceChannel of hydratedChannelsFromSourceToMessage) {
+          const channelChainToRender = getChannelChain(sourceChannel, channel, channels);
+
+          if (channelChainToRender.length > 0) {
+            const { nodes: channelNodes, edges: channelEdges } = getNodesAndEdgesForChannelChain({
+              source: message,
+              target: entityConsumer,
+              channelChain: channelChainToRender,
+              mode,
+            });
+
+            nodes.push(...channelNodes);
+            edges.push(...channelEdges);
+          } else {
+            // No chain found - connect message to channel and channel to entity
+            nodes.push(
+              createNode({
+                id: generateIdForNode(channel),
+                type: channel.collection,
+                data: { mode, channel: { ...channel.data, ...channel } },
+                position: { x: 0, y: 0 },
+              })
+            );
+            edges.push(
+              createEdge({
+                id: generatedIdForEdge(message, channel),
+                source: messageId,
+                target: generateIdForNode(channel),
+                label: 'routes to',
+                data: {
+                  customColor: getColorFromString(message.data.id),
+                  rootSourceAndTarget: {
+                    source: { id: generateIdForNode(message), collection: message.collection },
+                    target: { id: generateIdForNode(entityConsumer), collection: entityConsumer.collection },
+                  },
+                },
+              })
+            );
+            edges.push(
+              createEdge({
+                id: generatedIdForEdge(channel, entityConsumer),
+                source: generateIdForNode(channel),
+                target: entityConsumerId,
+                label: `${getEdgeLabelForMessageAsSource(message, true)} \n ${message.data.name}`,
+                data: {
+                  customColor: getColorFromString(message.data.id),
+                  rootSourceAndTarget: {
+                    source: { id: generateIdForNode(message), collection: message.collection },
+                    target: { id: generateIdForNode(entityConsumer), collection: entityConsumer.collection },
+                  },
+                },
+              })
+            );
+          }
+        }
       }
     }
   }
