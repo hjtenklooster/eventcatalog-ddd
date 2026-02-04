@@ -170,4 +170,42 @@ export const mockEntities = [
       // No sends/receives - testing entities without messaging
     },
   },
+  {
+    id: 'Payment-1.0.0',
+    slug: 'Payment',
+    collection: 'entities',
+    data: {
+      id: 'Payment',
+      name: 'Payment',
+      version: '1.0.0',
+      identifier: 'paymentId',
+      aggregateRoot: true,
+      // Entity sends OrderShipped to OrderChannel (different from Order entity's sends)
+      sends: [
+        {
+          id: 'OrderShipped',
+          version: '1.0.0',
+          to: [
+            {
+              id: 'OrderChannel',
+              version: '1.0.0',
+            },
+          ],
+        },
+      ],
+      // Entity receives ShipOrder from OrderChannel (different from Order entity's receives)
+      receives: [
+        {
+          id: 'ShipOrder',
+          version: '1.0.0',
+          from: [
+            {
+              id: 'OrderChannel',
+              version: '1.0.0',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

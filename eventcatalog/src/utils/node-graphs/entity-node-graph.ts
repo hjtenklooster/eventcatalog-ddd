@@ -84,8 +84,12 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
 
   // Process received messages - get producers (services/entities that send what this entity receives)
   for (const message of receives) {
+    // Extract channel configuration from entity's receives
+    const targetChannels = receivesRaw.find((receiveRaw) => receiveRaw.id === message.data.id)?.from;
+
     const { nodes: consumedMessageNodes, edges: consumedMessageEdges } = getNodesAndEdgesForConsumedMessage({
       message,
+      targetChannels,
       services,
       channels,
       currentNodes: nodes,
@@ -110,8 +114,12 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
 
   // Process sent messages - get consumers (services/entities that receive what this entity sends)
   for (const message of sends) {
+    // Extract channel configuration from entity's sends
+    const sourceChannels = sendsRaw.find((sendRaw) => sendRaw.id === message.data.id)?.to;
+
     const { nodes: producedMessageNodes, edges: producedMessageEdges } = getNodesAndEdgesForProducedMessage({
       message,
+      sourceChannels,
       services,
       channels,
       currentNodes: nodes,

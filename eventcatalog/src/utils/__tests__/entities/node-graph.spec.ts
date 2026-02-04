@@ -113,5 +113,53 @@ describe('Entity NodeGraph', () => {
       // Should have no edges
       expect(edges).toHaveLength(0);
     });
+
+    it('should render channels when entity sends message to a channel', async () => {
+      const { nodes, edges } = await getNodesAndEdges({ id: 'Payment', version: '1.0.0' });
+
+      // Should have entity node
+      const entityNode = nodes.find((n) => n.id === 'Payment-1.0.0');
+      expect(entityNode).toBeDefined();
+
+      // Should have channel node
+      const channelNode = nodes.find((n) => n.id === 'OrderChannel-1.0.0');
+      expect(channelNode).toBeDefined();
+      expect(channelNode?.type).toBe('channels');
+
+      // Should have message node (OrderShipped)
+      const messageNode = nodes.find((n) => n.id === 'OrderShipped-1.0.0');
+      expect(messageNode).toBeDefined();
+
+      // Should have edge from entity to message
+      const entityToMessageEdge = edges.find((e) => e.source === 'Payment-1.0.0' && e.target === 'OrderShipped-1.0.0');
+      expect(entityToMessageEdge).toBeDefined();
+      expect(entityToMessageEdge?.label).toBe('emits');
+
+      // Should have edge from message to channel
+      const messageToChannelEdge = edges.find((e) => e.source === 'OrderShipped-1.0.0' && e.target === 'OrderChannel-1.0.0');
+      expect(messageToChannelEdge).toBeDefined();
+      expect(messageToChannelEdge?.label).toBe('routes to');
+    });
+
+    it('should render channels when entity receives message from a channel', async () => {
+      const { nodes, edges } = await getNodesAndEdges({ id: 'Payment', version: '1.0.0' });
+
+      // Should have channel node
+      const channelNode = nodes.find((n) => n.id === 'OrderChannel-1.0.0');
+      expect(channelNode).toBeDefined();
+
+      // Should have message node (ShipOrder)
+      const messageNode = nodes.find((n) => n.id === 'ShipOrder-1.0.0');
+      expect(messageNode).toBeDefined();
+
+      // Edge from message to channel (no producers in this test setup, so direct connection)
+      const messageToChannelEdge = edges.find((e) => e.source === 'ShipOrder-1.0.0' && e.target === 'OrderChannel-1.0.0');
+      expect(messageToChannelEdge).toBeDefined();
+
+      // Edge from channel to entity
+      const channelToEntityEdge = edges.find((e) => e.source === 'OrderChannel-1.0.0' && e.target === 'Payment-1.0.0');
+      expect(channelToEntityEdge).toBeDefined();
+      expect(channelToEntityEdge?.label).toBe('handles');
+    });
   });
 });
