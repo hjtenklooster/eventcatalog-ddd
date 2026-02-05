@@ -273,6 +273,40 @@ export async function findResourcesByOwner(params: { ownerId: string }) {
   return { ownerId: params.ownerId, totalCount: results.length, resources: results };
 }
 
+// ============================================
+// Shared helpers for producer/consumer lookups
+// ============================================
+
+const createSendsFilter = (messageId: string, messageVersion?: string) => (resource: any) => {
+  const sends = (resource.data as any).sends || [];
+  return sends.some((send: any) => {
+    const idMatch = send.id === messageId;
+    if (!messageVersion || !send.version || send.version === 'latest') return idMatch;
+    return idMatch && send.version === messageVersion;
+  });
+};
+
+const createReceivesFilter = (messageId: string, messageVersion?: string) => (resource: any) => {
+  const receives = (resource.data as any).receives || [];
+  return receives.some((receive: any) => {
+    const idMatch = receive.id === messageId;
+    if (!messageVersion || !receive.version || receive.version === 'latest') return idMatch;
+    return idMatch && receive.version === messageVersion;
+  });
+};
+
+const mapResourceBasic = (r: any, collection: 'services' | 'entities') => ({
+  id: (r.data as any).id,
+  version: (r.data as any).version,
+  name: (r.data as any).name || (r.data as any).id,
+  collection,
+});
+
+const mapResourceWithOwners = (r: any, collection: 'services' | 'entities') => ({
+  ...mapResourceBasic(r, collection),
+  owners: (r.data as any).owners || [],
+});
+
 /**
  * Get services and entities that produce (send) a specific message
  */
@@ -289,29 +323,13 @@ export async function getProducersOfMessage(params: { messageId: string; message
     };
   }
 
-  const filterBySends = (resource: any) => {
-    const sends = (resource.data as any).sends || [];
-    return sends.some((send: any) => {
-      const idMatch = send.id === params.messageId;
-      if (!send.version || send.version === 'latest') return idMatch;
-      return idMatch && send.version === params.messageVersion;
-    });
-  };
-
+  const filterBySends = createSendsFilter(params.messageId, params.messageVersion);
   const serviceProducers = services.filter(filterBySends);
   const entityProducers = entities.filter(filterBySends);
 
   const producers = [
-    ...serviceProducers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-    })),
-    ...entityProducers.map((e) => ({
-      id: (e.data as any).id,
-      version: (e.data as any).version,
-      name: (e.data as any).name || (e.data as any).id,
-    })),
+    ...serviceProducers.map((s) => mapResourceBasic(s, 'services')),
+    ...entityProducers.map((e) => mapResourceBasic(e, 'entities')),
   ];
 
   return {
@@ -341,29 +359,13 @@ export async function getConsumersOfMessage(params: { messageId: string; message
     };
   }
 
-  const filterByReceives = (resource: any) => {
-    const receives = (resource.data as any).receives || [];
-    return receives.some((receive: any) => {
-      const idMatch = receive.id === params.messageId;
-      if (!receive.version || receive.version === 'latest') return idMatch;
-      return idMatch && receive.version === params.messageVersion;
-    });
-  };
-
+  const filterByReceives = createReceivesFilter(params.messageId, params.messageVersion);
   const serviceConsumers = services.filter(filterByReceives);
   const entityConsumers = entities.filter(filterByReceives);
 
   const consumers = [
-    ...serviceConsumers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-    })),
-    ...entityConsumers.map((e) => ({
-      id: (e.data as any).id,
-      version: (e.data as any).version,
-      name: (e.data as any).name || (e.data as any).id,
-    })),
+    ...serviceConsumers.map((s) => mapResourceBasic(s, 'services')),
+    ...entityConsumers.map((e) => mapResourceBasic(e, 'entities')),
   ];
 
   return {
@@ -394,29 +396,29 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
     };
   }
 
-  const filterBySends = (resource: any) => {
-    const sends = (resource.data as any).sends || [];
-    return sends.some((send: any) => send.id === params.messageId);
-  };
-
-  const filterByReceives = (resource: any) => {
-    const receives = (resource.data as any).receives || [];
-    return receives.some((receive: any) => receive.id === params.messageId);
-  };
+  const filterBySends = createSendsFilter(params.messageId, params.messageVersion);
+  const filterByReceives = createReceivesFilter(params.messageId, params.messageVersion);
 
   // Find producers (services and entities)
   const serviceProducers = services.filter(filterBySends);
   const entityProducers = entities.filter(filterBySends);
-  const allProducers = [...serviceProducers, ...entityProducers];
 
   // Find consumers (services and entities)
   const serviceConsumers = services.filter(filterByReceives);
   const entityConsumers = entities.filter(filterByReceives);
-  const allConsumers = [...serviceConsumers, ...entityConsumers];
+
+  const allProducers = [
+    ...serviceProducers.map((s) => ({ resource: s, collection: 'services' as const })),
+    ...entityProducers.map((e) => ({ resource: e, collection: 'entities' as const })),
+  ];
+  const allConsumers = [
+    ...serviceConsumers.map((s) => ({ resource: s, collection: 'services' as const })),
+    ...entityConsumers.map((e) => ({ resource: e, collection: 'entities' as const })),
+  ];
 
   // Collect all affected teams/owners
   const affectedOwners = new Set<string>();
-  [...allProducers, ...allConsumers].forEach((resource) => {
+  [...allProducers, ...allConsumers].forEach(({ resource }) => {
     const owners = (resource.data as any).owners || [];
     owners.forEach((o: any) => {
       const ownerId = typeof o === 'string' ? o : o.id;
@@ -431,13 +433,6 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
     affectedOwners.add(ownerId);
   });
 
-  const mapResource = (r: any) => ({
-    id: (r.data as any).id,
-    version: (r.data as any).version,
-    name: (r.data as any).name || (r.data as any).id,
-    owners: (r.data as any).owners || [],
-  });
-
   return {
     message: {
       id: params.messageId,
@@ -448,11 +443,12 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
     impact: {
       producerCount: allProducers.length,
       consumerCount: allConsumers.length,
-      totalServicesAffected: new Set([...allProducers, ...allConsumers].map((r) => (r.data as any).id)).size,
+      totalServicesAffected: new Set([...allProducers, ...allConsumers].map(({ resource }) => (resource.data as any).id)).size,
+      totalResourcesAffected: new Set([...allProducers, ...allConsumers].map(({ resource }) => (resource.data as any).id)).size,
       teamsAffected: Array.from(affectedOwners),
     },
-    producers: allProducers.map(mapResource),
-    consumers: allConsumers.map(mapResource),
+    producers: allProducers.map(({ resource, collection }) => mapResourceWithOwners(resource, collection)),
+    consumers: allConsumers.map(({ resource, collection }) => mapResourceWithOwners(resource, collection)),
   };
 }
 
@@ -618,38 +614,32 @@ export async function findMessageBySchemaId(params: {
       // Get producers and consumers (services and entities)
       const [services, entities] = await Promise.all([getCollection('services'), getCollection('entities')]);
 
-      const filterBySends = (r: any) => {
-        const sends = (r.data as any).sends || [];
-        return sends.some((send: any) => send.id === params.messageId);
-      };
-
-      const filterByReceives = (r: any) => {
-        const receives = (r.data as any).receives || [];
-        return receives.some((receive: any) => receive.id === params.messageId);
-      };
+      const resourceVersion = (resource.data as any).version;
+      const filterBySends = createSendsFilter(params.messageId, resourceVersion);
+      const filterByReceives = createReceivesFilter(params.messageId, resourceVersion);
 
       const serviceProducers = services.filter(filterBySends);
       const entityProducers = entities.filter(filterBySends);
       const serviceConsumers = services.filter(filterByReceives);
       const entityConsumers = entities.filter(filterByReceives);
 
-      const mapResource = (r: any) => ({
-        id: (r.data as any).id,
-        version: (r.data as any).version,
-        name: (r.data as any).name || (r.data as any).id,
-      });
-
       return {
         resource: {
           id: (resource.data as any).id,
-          version: (resource.data as any).version,
+          version: resourceVersion,
           name: (resource.data as any).name,
           collection: collectionName,
           summary: (resource.data as any).summary,
           owners: (resource.data as any).owners || [],
         },
-        producers: [...serviceProducers.map(mapResource), ...entityProducers.map(mapResource)],
-        consumers: [...serviceConsumers.map(mapResource), ...entityConsumers.map(mapResource)],
+        producers: [
+          ...serviceProducers.map((s) => mapResourceBasic(s, 'services')),
+          ...entityProducers.map((e) => mapResourceBasic(e, 'entities')),
+        ],
+        consumers: [
+          ...serviceConsumers.map((s) => mapResourceBasic(s, 'services')),
+          ...entityConsumers.map((e) => mapResourceBasic(e, 'entities')),
+        ],
       };
     }
   }

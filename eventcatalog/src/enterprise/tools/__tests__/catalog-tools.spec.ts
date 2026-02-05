@@ -882,13 +882,12 @@ describe('getUser', () => {
 });
 
 // ============================================
-// Entity Support Tests (Gap 6)
-// These tests document the expected behavior when entities
-// are included in producer/consumer lookups.
-// Currently FAILING - entities are not yet supported.
+// Entity Support Tests
+// These tests verify that entities are correctly
+// included in producer/consumer lookups alongside services.
 // ============================================
 
-describe('Entity Support in Message Analysis (Gap 6)', () => {
+describe('Entity Support in Message Analysis', () => {
   describe('getProducersOfMessage should include entities', () => {
     it('finds entities that send a message', async () => {
       // Order entity sends OrderCreated event
