@@ -511,7 +511,7 @@ export const getNodesAndEdgesForConsumedMessage = ({
   services: CollectionEntry<'services'>[];
   channels: CollectionEntry<'channels'>[];
   currentNodes: Node[];
-  target: CollectionEntry<'services'> | CollectionEntry<'entities'>;
+  target: CollectionEntry<'services'> | CollectionEntry<'entities'> | CollectionEntry<'policies'>;
   mode?: 'simple' | 'full';
   channelMap?: Map<string, CollectionEntry<'channels'>[]>;
   entities?: CollectionEntry<'entities'>[];
@@ -539,13 +539,19 @@ export const getNodesAndEdgesForConsumedMessage = ({
     })
   );
 
-  // Render the target node (can be service or entity)
+  // Render the target node (can be service, entity, or policy)
   const isTargetEntity = target.collection === 'entities';
+  const isTargetPolicy = target.collection === 'policies';
+  const targetNodeData = isTargetEntity
+    ? { mode, entity: { ...target.data } }
+    : isTargetPolicy
+      ? { mode, policy: { ...target.data } }
+      : { mode, service: { ...target.data } };
   nodes.push(
     createNode({
       id: generateIdForNode(target),
       type: target.collection,
-      data: isTargetEntity ? { mode, entity: { ...target.data } } : { mode, service: { ...target.data } },
+      data: targetNodeData,
       position: { x: 0, y: 0 },
     })
   );
@@ -985,7 +991,7 @@ export const getNodesAndEdgesForProducedMessage = ({
   channels: CollectionEntry<'channels'>[];
   currentNodes: Node[];
   currentEdges: Edge[];
-  source: CollectionEntry<'services'> | CollectionEntry<'entities'>;
+  source: CollectionEntry<'services'> | CollectionEntry<'entities'> | CollectionEntry<'policies'>;
   mode?: 'simple' | 'full';
   channelMap?: Map<string, CollectionEntry<'channels'>[]>;
   entities?: CollectionEntry<'entities'>[];
@@ -1013,24 +1019,31 @@ export const getNodesAndEdgesForProducedMessage = ({
     })
   );
 
-  // Render the producer node (can be service or entity)
+  // Render the producer node (can be service, entity, or policy)
   const isSourceEntity = source.collection === 'entities';
+  const isSourcePolicy = source.collection === 'policies';
+  const sourceNodeData = isSourceEntity
+    ? { mode, entity: { ...source.data } }
+    : isSourcePolicy
+      ? { mode, policy: { ...source.data } }
+      : { mode, service: { ...source.data } };
   nodes.push(
     createNode({
       id: generateIdForNode(source),
       type: source.collection,
-      data: isSourceEntity ? { mode, entity: { ...source.data } } : { mode, service: { ...source.data } },
+      data: sourceNodeData,
       position: { x: 0, y: 0 },
     })
   );
 
   // Render the edge from the producer to the message
+  const edgeLabel = isSourceEntity ? 'emits' : isSourcePolicy ? 'dispatches' : getEdgeLabelForServiceAsTarget(message);
   edges.push(
     createEdge({
       id: generatedIdForEdge(source, message),
       source: generateIdForNode(source),
       target: messageId,
-      label: isSourceEntity ? 'emits' : getEdgeLabelForServiceAsTarget(message),
+      label: edgeLabel,
       data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
     })
   );

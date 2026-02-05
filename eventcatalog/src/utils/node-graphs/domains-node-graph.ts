@@ -10,6 +10,7 @@ import {
 import { getNodesAndEdges as getServicesNodeAndEdges } from './services-node-graph';
 import { getNodesAndEdges as getDataProductsNodeAndEdges } from './data-products-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForEntity } from './entity-node-graph';
+import { getNodesAndEdges as getNodesAndEdgesForPolicy } from './policy-node-graph';
 import merge from 'lodash.merge';
 import { createVersionedMap, findInMap } from '@utils/collections/util';
 import type { Node } from '@xyflow/react';
@@ -201,11 +202,12 @@ export const getNodesAndEdges = async ({
     edges = new Map();
 
   // 1. Parallel Fetching
-  const [domains, services, dataProducts, entities] = await Promise.all([
+  const [domains, services, dataProducts, entities, policies] = await Promise.all([
     getCollection('domains'),
     getCollection('services'),
     getCollection('data-products'),
     getCollection('entities'),
+    getCollection('policies'),
   ]);
 
   const domain = domains.find((service) => service.data.id === id && service.data.version === version);
@@ -223,6 +225,7 @@ export const getNodesAndEdges = async ({
   const domainMap = createVersionedMap(domains);
   const dataProductMap = createVersionedMap(dataProducts);
   const entityMap = createVersionedMap(entities);
+  const policyMap = createVersionedMap(policies);
 
   const rawServices = domain?.data.services || [];
   const rawSubDomains = domain?.data.domains || [];
@@ -251,6 +254,14 @@ export const getNodesAndEdges = async ({
     // Only include entities that participate in messaging
     .filter((e) => e.data.sends?.length > 0 || e.data.receives?.length > 0)
     .map((ent) => ({ id: ent.data.id, version: ent.data.version }));
+
+  const rawPolicies = domain?.data.policies || [];
+  const domainPoliciesWithVersion = rawPolicies
+    .map((policy) => findInMap(policyMap, policy.id, policy.version))
+    .filter((p): p is any => !!p)
+    // Only include policies that participate in messaging
+    .filter((p) => p.data.sends?.length > 0 || p.data.receives?.length > 0)
+    .map((pol) => ({ id: pol.data.id, version: pol.data.version }));
 
   // Get all the nodes for everything
 
@@ -319,6 +330,19 @@ export const getNodesAndEdges = async ({
       nodes.set(n.id, nodes.has(n.id) ? merge(nodes.get(n.id), n) : n);
     });
     entityEdges.forEach((e) => edges.set(e.id, e));
+  }
+
+  for (const policy of domainPoliciesWithVersion) {
+    const { nodes: policyNodes, edges: policyEdges } = await getNodesAndEdgesForPolicy({
+      id: policy.id,
+      version: policy.version,
+      mode,
+      defaultFlow: flow,
+    });
+    policyNodes.forEach((n) => {
+      nodes.set(n.id, nodes.has(n.id) ? merge(nodes.get(n.id), n) : n);
+    });
+    policyEdges.forEach((e) => edges.set(e.id, e));
   }
 
   // Add group node to the graph first before calculating positions

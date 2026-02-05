@@ -41,6 +41,8 @@ const NODE_SHAPE_MAP: Record<string, [string, string]> = {
   'data-products': ['[[', ']]'],
   entities: ['[', ']'], // rectangle
   entity: ['[', ']'],
+  policies: ['[', ']'], // rectangle
+  policy: ['[', ']'],
   custom: ['[', ']'], // rectangle
   view: ['[', ']'], // rectangle
   note: ['[', ']'], // rectangle
@@ -74,6 +76,8 @@ const NODE_STYLE_CLASSES: Record<string, string> = {
   'data-products': 'fill:#6366f1,stroke:#4338ca,color:#fff',
   entities: 'fill:#6b7280,stroke:#374151,color:#fff',
   entity: 'fill:#6b7280,stroke:#374151,color:#fff',
+  policies: 'fill:#7C3AED,stroke:#6D28D9,color:#fff',
+  policy: 'fill:#7C3AED,stroke:#6D28D9,color:#fff',
   custom: 'fill:#9ca3af,stroke:#6b7280,color:#000',
   view: 'fill:#9ca3af,stroke:#6b7280,color:#000',
   note: 'fill:#fef3c7,stroke:#d97706,color:#000',
@@ -197,6 +201,11 @@ export function getNodeLabel(node: Node): string {
   if (type === 'entities' || type === 'entity') {
     const entity = (data as any).entity;
     return entity?.name || entity?.id || node.id;
+  }
+
+  if (type === 'policies' || type === 'policy') {
+    const policy = (data as any).policy;
+    return policy?.name || policy?.id || node.id;
   }
 
   if (type === 'note') {
