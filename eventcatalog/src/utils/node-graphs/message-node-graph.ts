@@ -110,7 +110,7 @@ const getNodesAndEdges = async ({
     // Create the producer node with appropriate data structure
     const getProducerNodeData = () => {
       if (isDataProduct) return { mode, dataProduct: { ...producer.data } };
-      if (isEntity) return { mode, entity: producer };
+      if (isEntity) return { mode, entity: { ...producer.data } };
       return { mode, service: { ...producer.data } };
     };
 
@@ -238,7 +238,7 @@ const getNodesAndEdges = async ({
     // Create the consumer node with appropriate data structure
     const getConsumerNodeData = () => {
       if (isDataProduct) return { title: consumer?.data.id, mode, dataProduct: { ...consumer.data } };
-      if (isEntity) return { title: consumer?.data.id, mode, entity: consumer };
+      if (isEntity) return { title: consumer?.data.id, mode, entity: { ...consumer.data } };
       return { title: consumer?.data.id, mode, service: { ...consumer.data } };
     };
 
@@ -545,7 +545,7 @@ export const getNodesAndEdgesForConsumedMessage = ({
     createNode({
       id: generateIdForNode(target),
       type: target.collection,
-      data: isTargetEntity ? { mode, entity: target } : { mode, service: { ...target.data } },
+      data: isTargetEntity ? { mode, entity: { ...target.data } } : { mode, service: { ...target.data } },
       position: { x: 0, y: 0 },
     })
   );
@@ -806,7 +806,7 @@ export const getNodesAndEdgesForConsumedMessage = ({
         createNode({
           id: entityProducerId,
           type: 'entities',
-          data: { mode, entity: entityProducer },
+          data: { mode, entity: { ...entityProducer.data } },
           position: { x: 0, y: 0 },
         })
       );
@@ -1019,7 +1019,7 @@ export const getNodesAndEdgesForProducedMessage = ({
     createNode({
       id: generateIdForNode(source),
       type: source.collection,
-      data: isSourceEntity ? { mode, entity: source } : { mode, service: { ...source.data } },
+      data: isSourceEntity ? { mode, entity: { ...source.data } } : { mode, service: { ...source.data } },
       position: { x: 0, y: 0 },
     })
   );
@@ -1258,7 +1258,7 @@ export const getNodesAndEdgesForProducedMessage = ({
         createNode({
           id: entityConsumerId,
           type: 'entities',
-          data: { mode, entity: entityConsumer },
+          data: { mode, entity: { ...entityConsumer.data } },
           position: { x: 0, y: 0 },
         })
       );

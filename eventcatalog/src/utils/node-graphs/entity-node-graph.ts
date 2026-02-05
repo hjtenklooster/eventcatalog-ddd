@@ -74,7 +74,7 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
     targetPosition: Position.Left,
     data: {
       mode,
-      entity,
+      entity: { ...entity.data },
     },
     position: { x: 0, y: 0 },
     type: 'entities',

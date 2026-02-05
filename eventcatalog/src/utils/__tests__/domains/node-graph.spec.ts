@@ -188,10 +188,8 @@ describe('Domains NodeGraph', () => {
         data: expect.objectContaining({
           mode: 'simple',
           entity: expect.objectContaining({
-            data: expect.objectContaining({
-              id: 'Shipment',
-              version: '0.0.1',
-            }),
+            id: 'Shipment',
+            version: '0.0.1',
           }),
         }),
         position: { x: expect.any(Number), y: expect.any(Number) },

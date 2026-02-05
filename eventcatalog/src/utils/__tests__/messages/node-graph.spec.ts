@@ -1613,7 +1613,7 @@ describe('Message NodeGraph', () => {
     });
 
     describe('when an entity is a consumer of a message', () => {
-      it('renders the entity node with type "entities" and edge label "handled by"', async () => {
+      it('renders the entity node with type "entities" and edge label "subscribes to"', async () => {
         // OrderAggregate entity has receives: [{ id: 'PaymentProcessed', version: '0.0.1' }]
         // So it should appear as a consumer of the PaymentProcessed event
         const { nodes, edges } = await getNodesAndEdgesForEvents({
@@ -1627,10 +1627,10 @@ describe('Message NodeGraph', () => {
         expect(entityNode?.type).toBe('entities');
         expect(entityNode?.data.entity).toBeDefined();
 
-        // Verify the edge has the correct "handled by" label for entity consumers
+        // Verify the edge has the correct "subscribes to" label for entity consumers
         const entityEdge = edges.find((edge: any) => edge.target === 'OrderAggregate-1.0.0');
         expect(entityEdge).toBeDefined();
-        expect(entityEdge?.label).toBe('handled by');
+        expect(entityEdge?.label).toBe('subscribes to');
         expect(entityEdge?.source).toBe('PaymentProcessed-0.0.1');
       });
     });
