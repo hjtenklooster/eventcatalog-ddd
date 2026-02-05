@@ -26,6 +26,7 @@ import { getQueries } from '@utils/collections/queries';
 import { createNode } from './utils/utils';
 import { getConsumersOfMessage, getProducersOfMessage } from '@utils/collections/services';
 import { getEntityProducersOfMessage, getEntityConsumersOfMessage } from '@utils/collections/entities';
+import { getPoliciesTriggeredByEvent, getPoliciesDispatchingCommand } from '@utils/collections/policies';
 import { getNodesAndEdgesForChannelChain } from './channel-node-graph';
 import { getChannelChain, isChannelsConnected } from '@utils/collections/channels';
 import { getChannels } from '@utils/collections/channels';
@@ -40,6 +41,10 @@ interface Props {
   channelRenderMode?: 'flat' | 'single';
   collection?: CollectionEntry<CollectionMessageTypes>[];
   channels?: CollectionEntry<'channels'>[];
+  // For expanding policy chains: show dispatched commands and their terminal consumers (event pages)
+  policyChainCommands?: any[];
+  // For expanding policy chains: show triggering events and their terminal producers (command pages)
+  policyChainEvents?: any[];
 }
 
 const getNodesAndEdges = async ({
@@ -50,6 +55,8 @@ const getNodesAndEdges = async ({
   channelRenderMode = 'flat',
   collection = [],
   channels = [],
+  policyChainCommands,
+  policyChainEvents,
 }: Props) => {
   const flow = defaultFlow || createDagreGraph({ ranksep: 300, nodesep: 50 });
   const nodes = [] as any,
@@ -90,12 +97,14 @@ const getNodesAndEdges = async ({
       | CollectionEntry<'services'>
       | CollectionEntry<'data-products'>
       | CollectionEntry<'entities'>
+      | CollectionEntry<'policies'>
     )[]) || [];
   const consumers =
     (message.data.consumers as (
       | CollectionEntry<'services'>
       | CollectionEntry<'data-products'>
       | CollectionEntry<'entities'>
+      | CollectionEntry<'policies'>
     )[]) || [];
 
   // Track nodes that are both sent and received (only for services)
@@ -106,11 +115,13 @@ const getNodesAndEdges = async ({
   for (const producer of producers) {
     const isDataProduct = producer.collection === 'data-products';
     const isEntity = producer.collection === 'entities';
+    const isPolicy = producer.collection === 'policies';
 
     // Create the producer node with appropriate data structure
     const getProducerNodeData = () => {
       if (isDataProduct) return { mode, dataProduct: { ...producer.data } };
       if (isEntity) return { mode, entity: { ...producer.data } };
+      if (isPolicy) return { mode, policy: { ...producer.data } };
       return { mode, service: { ...producer.data } };
     };
 
@@ -143,6 +154,101 @@ const getNodesAndEdges = async ({
           height: 40,
         },
       });
+      continue;
+    }
+
+    // Policies as producers (command pages): expand chain to show triggering events and their producers
+    if (isPolicy) {
+      edges.push({
+        id: generatedIdForEdge(producer, message),
+        source: generateIdForNode(producer),
+        target: generateIdForNode(message),
+        label: 'dispatches',
+        data: {
+          customColor: getColorFromString(message.data.id),
+          rootSourceAndTarget: {
+            source: { id: generateIdForNode(producer), collection: producer.collection },
+            target: { id: generateIdForNode(message), collection: message.collection },
+          },
+        },
+        animated: false,
+        markerEnd: { type: MarkerType.ArrowClosed, width: 40, height: 40 },
+      });
+
+      // Expand: show events that trigger this policy and their producers
+      if (policyChainEvents) {
+        const policyReceives = (producer.data as any).receives || [];
+        for (const receive of policyReceives) {
+          const event = policyChainEvents.find(
+            (e: any) => e.data.id === receive.id && (!receive.version || receive.version === 'latest' || e.data.version === receive.version)
+          );
+          if (!event) continue;
+
+          // Create event node
+          nodes.push(
+            createNode({
+              id: generateIdForNode(event),
+              type: event.collection,
+              data: { mode, message: { ...event.data } },
+              position: { x: 0, y: 0 },
+            })
+          );
+
+          // Edge: Event --triggers--> Policy
+          edges.push(
+            createEdge({
+              id: generatedIdForEdge(event, producer),
+              source: generateIdForNode(event),
+              target: generateIdForNode(producer),
+              label: 'triggers',
+              data: {
+                customColor: getColorFromString(event.data.id),
+                rootSourceAndTarget: {
+                  source: { id: generateIdForNode(event), collection: event.collection },
+                  target: { id: generateIdForNode(producer), collection: producer.collection },
+                },
+              },
+            })
+          );
+
+          // Find terminal producers of the event (services, entities, data-products — not policies)
+          const eventProducers = (event.data.producers || []).filter((p: any) => p.collection !== 'policies');
+          for (const terminalProducer of eventProducers) {
+            const isTermEntity = terminalProducer.collection === 'entities';
+            const isTermDP = terminalProducer.collection === 'data-products';
+            const termNodeData = isTermEntity
+              ? { mode, entity: { ...terminalProducer.data } }
+              : isTermDP
+                ? { mode, dataProduct: { ...terminalProducer.data } }
+                : { mode, service: { ...terminalProducer.data } };
+
+            nodes.push(
+              createNode({
+                id: generateIdForNode(terminalProducer),
+                type: isTermDP ? 'data-products' : terminalProducer.collection,
+                data: termNodeData,
+                position: { x: 0, y: 0 },
+              })
+            );
+
+            edges.push(
+              createEdge({
+                id: generatedIdForEdge(terminalProducer, event),
+                source: generateIdForNode(terminalProducer),
+                target: generateIdForNode(event),
+                label: isTermEntity ? 'emits' : getEdgeLabelForServiceAsTarget(event),
+                data: {
+                  customColor: getColorFromString(event.data.id),
+                  rootSourceAndTarget: {
+                    source: { id: generateIdForNode(terminalProducer), collection: terminalProducer.collection },
+                    target: { id: generateIdForNode(event), collection: event.collection },
+                  },
+                },
+              })
+            );
+          }
+        }
+      }
       continue;
     }
 
@@ -234,11 +340,13 @@ const getNodesAndEdges = async ({
   for (const consumer of consumers) {
     const isDataProduct = consumer.collection === 'data-products';
     const isEntity = consumer.collection === 'entities';
+    const isPolicy = consumer.collection === 'policies';
 
     // Create the consumer node with appropriate data structure
     const getConsumerNodeData = () => {
       if (isDataProduct) return { title: consumer?.data.id, mode, dataProduct: { ...consumer.data } };
       if (isEntity) return { title: consumer?.data.id, mode, entity: { ...consumer.data } };
+      if (isPolicy) return { title: consumer?.data.id, mode, policy: { ...consumer.data } };
       return { title: consumer?.data.id, mode, service: { ...consumer.data } };
     };
 
@@ -268,6 +376,101 @@ const getNodesAndEdges = async ({
           data: { customColor: getColorFromString(message.data.id), rootSourceAndTarget },
         })
       );
+      continue;
+    }
+
+    // Policies as consumers (event pages): expand chain to show dispatched commands and their consumers
+    if (isPolicy) {
+      edges.push(
+        createEdge({
+          id: generatedIdForEdge(message, consumer),
+          source: generateIdForNode(message),
+          target: generateIdForNode(consumer),
+          label: 'triggers',
+          data: {
+            customColor: getColorFromString(message.data.id),
+            rootSourceAndTarget: {
+              source: { id: generateIdForNode(message), collection: message.collection },
+              target: { id: generateIdForNode(consumer), collection: consumer.collection },
+            },
+          },
+        })
+      );
+
+      // Expand: show commands the policy dispatches and their consumers
+      if (policyChainCommands) {
+        const policySends = (consumer.data as any).sends || [];
+        for (const send of policySends) {
+          const command = policyChainCommands.find(
+            (c: any) => c.data.id === send.id && (!send.version || send.version === 'latest' || c.data.version === send.version)
+          );
+          if (!command) continue;
+
+          // Create command node
+          nodes.push(
+            createNode({
+              id: generateIdForNode(command),
+              type: command.collection,
+              data: { mode, message: { ...command.data } },
+              position: { x: 0, y: 0 },
+            })
+          );
+
+          // Edge: Policy --dispatches--> Command
+          edges.push(
+            createEdge({
+              id: generatedIdForEdge(consumer, command),
+              source: generateIdForNode(consumer),
+              target: generateIdForNode(command),
+              label: 'dispatches',
+              data: {
+                customColor: getColorFromString(command.data.id),
+                rootSourceAndTarget: {
+                  source: { id: generateIdForNode(consumer), collection: consumer.collection },
+                  target: { id: generateIdForNode(command), collection: command.collection },
+                },
+              },
+            })
+          );
+
+          // Find terminal consumers of the command (services, entities, data-products — not policies)
+          const commandConsumers = (command.data.consumers || []).filter((c: any) => c.collection !== 'policies');
+          for (const terminalConsumer of commandConsumers) {
+            const isTermEntity = terminalConsumer.collection === 'entities';
+            const isTermDP = terminalConsumer.collection === 'data-products';
+            const termNodeData = isTermEntity
+              ? { mode, entity: { ...terminalConsumer.data } }
+              : isTermDP
+                ? { mode, dataProduct: { ...terminalConsumer.data } }
+                : { mode, service: { ...terminalConsumer.data } };
+
+            nodes.push(
+              createNode({
+                id: generateIdForNode(terminalConsumer),
+                type: isTermDP ? 'data-products' : terminalConsumer.collection,
+                data: termNodeData,
+                position: { x: 0, y: 0 },
+              })
+            );
+
+            edges.push(
+              createEdge({
+                id: generatedIdForEdge(command, terminalConsumer),
+                source: generateIdForNode(command),
+                target: generateIdForNode(terminalConsumer),
+                label: isTermEntity ? 'subscribes to' : getEdgeLabelForMessageAsSource(command),
+                data: {
+                  customColor: getColorFromString(command.data.id),
+                  rootSourceAndTarget: {
+                    source: { id: generateIdForNode(command), collection: command.collection },
+                    target: { id: generateIdForNode(terminalConsumer), collection: terminalConsumer.collection },
+                  },
+                },
+              })
+            );
+          }
+        }
+      }
       continue;
     }
 
@@ -445,11 +648,15 @@ const getNodesAndEdges = async ({
     }
   });
 
-  nodes.forEach((node: any) => {
+  // Dedup nodes and edges (policy chain expansion can create duplicates)
+  const uniqueNodes = nodes.filter((node: any, index: number, self: any[]) => index === self.findIndex((t: any) => t.id === node.id));
+  const uniqueEdges = edges.filter((edge: any, index: number, self: any[]) => index === self.findIndex((t: any) => t.id === edge.id));
+
+  uniqueNodes.forEach((node: any) => {
     flow.setNode(node.id, { width: 150, height: 100 });
   });
 
-  edges.forEach((edge: any) => {
+  uniqueEdges.forEach((edge: any) => {
     flow.setEdge(edge.source, edge.target);
   });
 
@@ -457,8 +664,8 @@ const getNodesAndEdges = async ({
   dagre.layout(flow);
 
   return {
-    nodes: calculatedNodes(flow, nodes),
-    edges,
+    nodes: calculatedNodes(flow, uniqueNodes),
+    edges: uniqueEdges,
   };
 };
 
@@ -480,8 +687,8 @@ export const getNodesAndEdgesForCommands = async ({
   mode = 'simple',
   channelRenderMode = 'flat',
 }: Props) => {
-  const [commands, channels] = await Promise.all([getCommands(), getChannels()]);
-  return getNodesAndEdges({ id, version, defaultFlow, mode, channelRenderMode, collection: commands, channels });
+  const [commands, channels, events] = await Promise.all([getCommands(), getChannels(), getEvents()]);
+  return getNodesAndEdges({ id, version, defaultFlow, mode, channelRenderMode, collection: commands, channels, policyChainEvents: events });
 };
 
 export const getNodesAndEdgesForEvents = async ({
@@ -491,8 +698,8 @@ export const getNodesAndEdgesForEvents = async ({
   mode = 'simple',
   channelRenderMode = 'flat',
 }: Props) => {
-  const [events, channels] = await Promise.all([getEvents(), getChannels()]);
-  return getNodesAndEdges({ id, version, defaultFlow, mode, channelRenderMode, collection: events, channels });
+  const [events, channels, commands] = await Promise.all([getEvents(), getChannels(), getCommands()]);
+  return getNodesAndEdges({ id, version, defaultFlow, mode, channelRenderMode, collection: events, channels, policyChainCommands: commands });
 };
 
 export const getNodesAndEdgesForConsumedMessage = ({
@@ -505,6 +712,8 @@ export const getNodesAndEdgesForConsumedMessage = ({
   mode = 'simple',
   channelMap,
   entities,
+  policies,
+  allEvents,
 }: {
   message: CollectionEntry<CollectionMessageTypes>;
   targetChannels?: { id: string; version: string }[];
@@ -515,6 +724,8 @@ export const getNodesAndEdgesForConsumedMessage = ({
   mode?: 'simple' | 'full';
   channelMap?: Map<string, CollectionEntry<'channels'>[]>;
   entities?: CollectionEntry<'entities'>[];
+  policies?: CollectionEntry<'policies'>[];
+  allEvents?: CollectionEntry<'events'>[];
 }) => {
   let nodes = [] as Node[],
     edges = [] as any;
@@ -960,6 +1171,118 @@ export const getNodesAndEdgesForConsumedMessage = ({
     }
   }
 
+  // Policy chain expansion: when target consumes a command, show policies that dispatch it,
+  // the events that trigger those policies, and the terminal producers of those events
+  if (policies && allEvents && message.collection === 'commands') {
+    const policyEventMap = createVersionedMap(allEvents);
+    const dispatchingPolicies = getPoliciesDispatchingCommand(policies, message);
+    const filteredPolicies = dispatchingPolicies.filter(
+      (p) => !(isTargetPolicy && p.data.id === target.data.id && p.data.version === target.data.version)
+    );
+
+    for (const policy of filteredPolicies) {
+      const policyId = generateIdForNode(policy);
+
+      nodes.push(
+        createNode({
+          id: policyId,
+          type: 'policies',
+          data: { mode, policy: { ...policy.data } },
+          position: { x: 0, y: 0 },
+        })
+      );
+
+      // Edge: policy --dispatches--> command (message)
+      edges.push(
+        createEdge({
+          id: generatedIdForEdge(policy, message),
+          source: policyId,
+          target: messageId,
+          label: 'dispatches',
+          data: {
+            customColor: getColorFromString(message.data.id),
+            rootSourceAndTarget: {
+              source: { id: policyId, collection: 'policies' },
+              target: { id: messageId, collection: message.collection },
+            },
+          },
+        })
+      );
+
+      // Expand: events that trigger this policy
+      const policyReceives = policy.data.receives || [];
+      for (const receive of policyReceives) {
+        const event = findInMap(policyEventMap, receive.id, receive.version);
+        if (!event) continue;
+
+        const eventId = generateIdForNode(event);
+
+        nodes.push(
+          createNode({
+            id: eventId,
+            type: event.collection,
+            data: { mode, message: { ...event.data } },
+            position: { x: 0, y: 0 },
+          })
+        );
+
+        // Edge: event --triggers--> policy
+        edges.push(
+          createEdge({
+            id: generatedIdForEdge(event, policy),
+            source: eventId,
+            target: policyId,
+            label: 'triggers',
+            data: {
+              customColor: getColorFromString(event.data.id),
+              rootSourceAndTarget: {
+                source: { id: eventId, collection: event.collection },
+                target: { id: policyId, collection: 'policies' },
+              },
+            },
+          })
+        );
+
+        // Find terminal producers of the event (services + entities, not policies)
+        const eventServiceProducers = getProducersOfMessage(services, event);
+        const eventEntityProducers = entities ? getEntityProducersOfMessage(entities, event) : [];
+        const terminalProducers = [...eventServiceProducers, ...eventEntityProducers].filter(
+          (p) => !(isTargetEntity && p.data.id === target.data.id && p.data.version === target.data.version)
+        );
+
+        for (const terminal of terminalProducers) {
+          const terminalId = generateIdForNode(terminal);
+          const isTermEntity = terminal.collection === 'entities';
+
+          nodes.push(
+            createNode({
+              id: terminalId,
+              type: terminal.collection,
+              data: isTermEntity ? { mode, entity: { ...terminal.data } } : { mode, service: { ...terminal.data } },
+              position: { x: 0, y: 0 },
+            })
+          );
+
+          edges.push(
+            createEdge({
+              id: generatedIdForEdge(terminal, event),
+              source: terminalId,
+              target: eventId,
+              label: isTermEntity ? 'emits' : getEdgeLabelForServiceAsTarget(event),
+              data: {
+                customColor: getColorFromString(event.data.id),
+                rootSourceAndTarget: {
+                  source: { id: terminalId, collection: terminal.collection },
+                  target: { id: eventId, collection: event.collection },
+                },
+              },
+            })
+          );
+        }
+      }
+    }
+  }
+
   // Remove any nodes that are already in the current nodes (already on the UI)
   nodes = nodes.filter((node) => !currentNodes.find((n) => n.id === node.id));
 
@@ -984,6 +1307,8 @@ export const getNodesAndEdgesForProducedMessage = ({
   mode = 'simple',
   channelMap,
   entities,
+  policies,
+  allCommands,
 }: {
   message: CollectionEntry<CollectionMessageTypes>;
   sourceChannels?: { id: string; version: string }[];
@@ -995,6 +1320,8 @@ export const getNodesAndEdgesForProducedMessage = ({
   mode?: 'simple' | 'full';
   channelMap?: Map<string, CollectionEntry<'channels'>[]>;
   entities?: CollectionEntry<'entities'>[];
+  policies?: CollectionEntry<'policies'>[];
+  allCommands?: CollectionEntry<'commands'>[];
 }) => {
   let nodes = [] as Node[],
     edges = [] as any;
@@ -1420,6 +1747,114 @@ export const getNodesAndEdgesForProducedMessage = ({
               })
             );
           }
+        }
+      }
+    }
+  }
+
+  // Policy chain expansion: when source produces an event, show policies triggered by it,
+  // the commands they dispatch, and the terminal consumers of those commands
+  if (policies && allCommands && message.collection === 'events') {
+    const policyCommandMap = createVersionedMap(allCommands);
+    const triggeredPolicies = getPoliciesTriggeredByEvent(policies, message);
+    const filteredPolicies = triggeredPolicies.filter(
+      (p) => !(isSourcePolicy && p.data.id === source.data.id && p.data.version === source.data.version)
+    );
+
+    for (const policy of filteredPolicies) {
+      const policyId = generateIdForNode(policy);
+
+      nodes.push(
+        createNode({
+          id: policyId,
+          type: 'policies',
+          data: { mode, policy: { ...policy.data } },
+          position: { x: 0, y: 0 },
+        })
+      );
+
+      edges.push(
+        createEdge({
+          id: generatedIdForEdge(message, policy),
+          source: messageId,
+          target: policyId,
+          label: 'triggers',
+          data: {
+            customColor: getColorFromString(message.data.id),
+            rootSourceAndTarget: {
+              source: { id: messageId, collection: message.collection },
+              target: { id: policyId, collection: 'policies' },
+            },
+          },
+        })
+      );
+
+      const policySends = policy.data.sends || [];
+      for (const send of policySends) {
+        const command = findInMap(policyCommandMap, send.id, send.version);
+        if (!command) continue;
+
+        const commandId = generateIdForNode(command);
+
+        nodes.push(
+          createNode({
+            id: commandId,
+            type: command.collection,
+            data: { mode, message: { ...command.data } },
+            position: { x: 0, y: 0 },
+          })
+        );
+
+        edges.push(
+          createEdge({
+            id: generatedIdForEdge(policy, command),
+            source: policyId,
+            target: commandId,
+            label: 'dispatches',
+            data: {
+              customColor: getColorFromString(command.data.id),
+              rootSourceAndTarget: {
+                source: { id: policyId, collection: 'policies' },
+                target: { id: commandId, collection: command.collection },
+              },
+            },
+          })
+        );
+
+        const cmdServiceConsumers = getConsumersOfMessage(services, command);
+        const cmdEntityConsumers = entities ? getEntityConsumersOfMessage(entities, command) : [];
+        const terminalConsumers = [...cmdServiceConsumers, ...cmdEntityConsumers].filter(
+          (c) => !(isSourceEntity && c.data.id === source.data.id && c.data.version === source.data.version)
+        );
+
+        for (const terminal of terminalConsumers) {
+          const terminalId = generateIdForNode(terminal);
+          const isTermEntity = terminal.collection === 'entities';
+
+          nodes.push(
+            createNode({
+              id: terminalId,
+              type: terminal.collection,
+              data: isTermEntity ? { mode, entity: { ...terminal.data } } : { mode, service: { ...terminal.data } },
+              position: { x: 0, y: 0 },
+            })
+          );
+
+          edges.push(
+            createEdge({
+              id: generatedIdForEdge(command, terminal),
+              source: commandId,
+              target: terminalId,
+              label: isTermEntity ? 'subscribes to' : getEdgeLabelForMessageAsSource(command),
+              data: {
+                customColor: getColorFromString(command.data.id),
+                rootSourceAndTarget: {
+                  source: { id: commandId, collection: command.collection },
+                  target: { id: terminalId, collection: terminal.collection },
+                },
+              },
+            })
+          );
         }
       }
     }

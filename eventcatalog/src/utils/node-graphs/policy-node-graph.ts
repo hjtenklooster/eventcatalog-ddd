@@ -100,6 +100,8 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
       mode,
       channelMap,
       entities,
+      policies,
+      allEvents: events,
     });
 
     nodes.push(...consumedMessageNodes);
@@ -131,6 +133,8 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
       mode,
       channelMap,
       entities,
+      policies,
+      allCommands: commands,
     });
 
     nodes.push(...producedMessageNodes);
