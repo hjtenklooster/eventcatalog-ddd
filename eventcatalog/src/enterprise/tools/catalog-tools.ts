@@ -273,12 +273,49 @@ export async function findResourcesByOwner(params: { ownerId: string }) {
   return { ownerId: params.ownerId, totalCount: results.length, resources: results };
 }
 
+// ============================================
+// Shared helpers for producer/consumer lookups
+// ============================================
+
+const createSendsFilter = (messageId: string, messageVersion?: string) => (resource: any) => {
+  const sends = (resource.data as any).sends || [];
+  return sends.some((send: any) => {
+    const idMatch = send.id === messageId;
+    if (!messageVersion || !send.version || send.version === 'latest') return idMatch;
+    return idMatch && send.version === messageVersion;
+  });
+};
+
+const createReceivesFilter = (messageId: string, messageVersion?: string) => (resource: any) => {
+  const receives = (resource.data as any).receives || [];
+  return receives.some((receive: any) => {
+    const idMatch = receive.id === messageId;
+    if (!messageVersion || !receive.version || receive.version === 'latest') return idMatch;
+    return idMatch && receive.version === messageVersion;
+  });
+};
+
+const mapResourceBasic = (r: any, collection: 'services' | 'entities') => ({
+  id: (r.data as any).id,
+  version: (r.data as any).version,
+  name: (r.data as any).name || (r.data as any).id,
+  collection,
+});
+
+const mapResourceWithOwners = (r: any, collection: 'services' | 'entities') => ({
+  ...mapResourceBasic(r, collection),
+  owners: (r.data as any).owners || [],
+});
+
 /**
- * Get services that produce (send) a specific message
+ * Get services and entities that produce (send) a specific message
  */
 export async function getProducersOfMessage(params: { messageId: string; messageVersion: string; messageCollection: string }) {
-  const services = await getCollection('services');
-  const message = await getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`);
+  const [services, entities, message] = await Promise.all([
+    getCollection('services'),
+    getCollection('entities'),
+    getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`),
+  ]);
 
   if (!message) {
     return {
@@ -286,14 +323,14 @@ export async function getProducersOfMessage(params: { messageId: string; message
     };
   }
 
-  const producers = services.filter((service) => {
-    const sends = (service.data as any).sends || [];
-    return sends.some((send: any) => {
-      const idMatch = send.id === params.messageId;
-      if (!send.version || send.version === 'latest') return idMatch;
-      return idMatch && send.version === params.messageVersion;
-    });
-  });
+  const filterBySends = createSendsFilter(params.messageId, params.messageVersion);
+  const serviceProducers = services.filter(filterBySends);
+  const entityProducers = entities.filter(filterBySends);
+
+  const producers = [
+    ...serviceProducers.map((s) => mapResourceBasic(s, 'services')),
+    ...entityProducers.map((e) => mapResourceBasic(e, 'entities')),
+  ];
 
   return {
     message: {
@@ -301,21 +338,20 @@ export async function getProducersOfMessage(params: { messageId: string; message
       version: params.messageVersion,
       collection: params.messageCollection,
     },
-    producers: producers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-    })),
+    producers,
     count: producers.length,
   };
 }
 
 /**
- * Get services that consume (receive) a specific message
+ * Get services and entities that consume (receive) a specific message
  */
 export async function getConsumersOfMessage(params: { messageId: string; messageVersion: string; messageCollection: string }) {
-  const services = await getCollection('services');
-  const message = await getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`);
+  const [services, entities, message] = await Promise.all([
+    getCollection('services'),
+    getCollection('entities'),
+    getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`),
+  ]);
 
   if (!message) {
     return {
@@ -323,14 +359,14 @@ export async function getConsumersOfMessage(params: { messageId: string; message
     };
   }
 
-  const consumers = services.filter((service) => {
-    const receives = (service.data as any).receives || [];
-    return receives.some((receive: any) => {
-      const idMatch = receive.id === params.messageId;
-      if (!receive.version || receive.version === 'latest') return idMatch;
-      return idMatch && receive.version === params.messageVersion;
-    });
-  });
+  const filterByReceives = createReceivesFilter(params.messageId, params.messageVersion);
+  const serviceConsumers = services.filter(filterByReceives);
+  const entityConsumers = entities.filter(filterByReceives);
+
+  const consumers = [
+    ...serviceConsumers.map((s) => mapResourceBasic(s, 'services')),
+    ...entityConsumers.map((e) => mapResourceBasic(e, 'entities')),
+  ];
 
   return {
     message: {
@@ -338,22 +374,21 @@ export async function getConsumersOfMessage(params: { messageId: string; message
       version: params.messageVersion,
       collection: params.messageCollection,
     },
-    consumers: consumers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-    })),
+    consumers,
     count: consumers.length,
   };
 }
 
 /**
  * Analyze the impact of changing a message (event, command, query)
- * Returns all affected services (producers and consumers) and their owners
+ * Returns all affected services and entities (producers and consumers) and their owners
  */
 export async function analyzeChangeImpact(params: { messageId: string; messageVersion: string; messageCollection: string }) {
-  const services = await getCollection('services');
-  const message = await getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`);
+  const [services, entities, message] = await Promise.all([
+    getCollection('services'),
+    getCollection('entities'),
+    getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`),
+  ]);
 
   if (!message) {
     return {
@@ -361,22 +396,30 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
     };
   }
 
-  // Find producers
-  const producers = services.filter((service) => {
-    const sends = (service.data as any).sends || [];
-    return sends.some((send: any) => send.id === params.messageId);
-  });
+  const filterBySends = createSendsFilter(params.messageId, params.messageVersion);
+  const filterByReceives = createReceivesFilter(params.messageId, params.messageVersion);
 
-  // Find consumers
-  const consumers = services.filter((service) => {
-    const receives = (service.data as any).receives || [];
-    return receives.some((receive: any) => receive.id === params.messageId);
-  });
+  // Find producers (services and entities)
+  const serviceProducers = services.filter(filterBySends);
+  const entityProducers = entities.filter(filterBySends);
+
+  // Find consumers (services and entities)
+  const serviceConsumers = services.filter(filterByReceives);
+  const entityConsumers = entities.filter(filterByReceives);
+
+  const allProducers = [
+    ...serviceProducers.map((s) => ({ resource: s, collection: 'services' as const })),
+    ...entityProducers.map((e) => ({ resource: e, collection: 'entities' as const })),
+  ];
+  const allConsumers = [
+    ...serviceConsumers.map((s) => ({ resource: s, collection: 'services' as const })),
+    ...entityConsumers.map((e) => ({ resource: e, collection: 'entities' as const })),
+  ];
 
   // Collect all affected teams/owners
   const affectedOwners = new Set<string>();
-  [...producers, ...consumers].forEach((service) => {
-    const owners = (service.data as any).owners || [];
+  [...allProducers, ...allConsumers].forEach(({ resource }) => {
+    const owners = (resource.data as any).owners || [];
     owners.forEach((o: any) => {
       const ownerId = typeof o === 'string' ? o : o.id;
       affectedOwners.add(ownerId);
@@ -398,23 +441,18 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
       name: (message.data as any).name || params.messageId,
     },
     impact: {
-      producerCount: producers.length,
-      consumerCount: consumers.length,
-      totalServicesAffected: new Set([...producers, ...consumers].map((s) => (s.data as any).id)).size,
+      producerCount: allProducers.length,
+      consumerCount: allConsumers.length,
+      totalServicesAffected: new Set(
+        [...allProducers, ...allConsumers]
+          .filter(({ collection }) => collection === 'services')
+          .map(({ resource }) => (resource.data as any).id)
+      ).size,
+      totalResourcesAffected: new Set([...allProducers, ...allConsumers].map(({ resource }) => (resource.data as any).id)).size,
       teamsAffected: Array.from(affectedOwners),
     },
-    producers: producers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-      owners: (s.data as any).owners || [],
-    })),
-    consumers: consumers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-      owners: (s.data as any).owners || [],
-    })),
+    producers: allProducers.map(({ resource, collection }) => mapResourceWithOwners(resource, collection)),
+    consumers: allConsumers.map(({ resource, collection }) => mapResourceWithOwners(resource, collection)),
   };
 }
 
@@ -577,38 +615,35 @@ export async function findMessageBySchemaId(params: {
     const matches = getItemsFromCollectionByIdAndSemverOrLatest(collection, params.messageId, params.messageVersion);
     const resource = matches[0];
     if (resource) {
-      // Get producers and consumers
-      const services = await getCollection('services');
+      // Get producers and consumers (services and entities)
+      const [services, entities] = await Promise.all([getCollection('services'), getCollection('entities')]);
 
-      const producers = services.filter((service) => {
-        const sends = (service.data as any).sends || [];
-        return sends.some((send: any) => send.id === params.messageId);
-      });
+      const resourceVersion = (resource.data as any).version;
+      const filterBySends = createSendsFilter(params.messageId, resourceVersion);
+      const filterByReceives = createReceivesFilter(params.messageId, resourceVersion);
 
-      const consumers = services.filter((service) => {
-        const receives = (service.data as any).receives || [];
-        return receives.some((receive: any) => receive.id === params.messageId);
-      });
+      const serviceProducers = services.filter(filterBySends);
+      const entityProducers = entities.filter(filterBySends);
+      const serviceConsumers = services.filter(filterByReceives);
+      const entityConsumers = entities.filter(filterByReceives);
 
       return {
         resource: {
           id: (resource.data as any).id,
-          version: (resource.data as any).version,
+          version: resourceVersion,
           name: (resource.data as any).name,
           collection: collectionName,
           summary: (resource.data as any).summary,
           owners: (resource.data as any).owners || [],
         },
-        producers: producers.map((s) => ({
-          id: (s.data as any).id,
-          version: (s.data as any).version,
-          name: (s.data as any).name || (s.data as any).id,
-        })),
-        consumers: consumers.map((s) => ({
-          id: (s.data as any).id,
-          version: (s.data as any).version,
-          name: (s.data as any).name || (s.data as any).id,
-        })),
+        producers: [
+          ...serviceProducers.map((s) => mapResourceBasic(s, 'services')),
+          ...entityProducers.map((e) => mapResourceBasic(e, 'entities')),
+        ],
+        consumers: [
+          ...serviceConsumers.map((s) => mapResourceBasic(s, 'services')),
+          ...entityConsumers.map((e) => mapResourceBasic(e, 'entities')),
+        ],
       };
     }
   }
@@ -928,10 +963,12 @@ export const toolDescriptions = {
   getSchemaForResource:
     'Use this tool to get the schema or specifications (openapi or asyncapi or graphql) for a resource by its id and version',
   findResourcesByOwner: 'Use this tool to find all resources (services, events, commands, etc.) owned by a specific team or user',
-  getProducersOfMessage: 'Use this tool to find which services produce (send) a specific message (event, command, or query)',
-  getConsumersOfMessage: 'Use this tool to find which services consume (receive) a specific message (event, command, or query)',
+  getProducersOfMessage:
+    'Use this tool to find which services and entities produce (send) a specific message (event, command, or query)',
+  getConsumersOfMessage:
+    'Use this tool to find which services and entities consume (receive) a specific message (event, command, or query)',
   analyzeChangeImpact:
-    'Use this tool to analyze the impact of changing a message. Returns all affected services (producers and consumers), the teams that own them, and the blast radius of the change',
+    'Use this tool to analyze the impact of changing a message. Returns all affected services and entities (producers and consumers), the teams that own them, and the blast radius of the change',
   explainBusinessFlow:
     'Use this tool to get detailed information about a business flow (state machine). Returns the flow definition, steps, mermaid diagram if available, and related services',
   getTeams:

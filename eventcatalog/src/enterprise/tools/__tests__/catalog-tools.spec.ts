@@ -882,6 +882,163 @@ describe('getUser', () => {
 });
 
 // ============================================
+// Entity Support Tests
+// These tests verify that entities are correctly
+// included in producer/consumer lookups alongside services.
+// ============================================
+
+describe('Entity Support in Message Analysis', () => {
+  describe('getProducersOfMessage should include entities', () => {
+    it('finds entities that send a message', async () => {
+      // Order entity sends OrderCreated event
+      const result = await getProducersOfMessage({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // Should find the Order entity as a producer
+        expect(result.producers.some((p: ProducerConsumer) => p.id === 'Order')).toBe(true);
+      }
+    });
+
+    it('finds both services AND entities that send a message', async () => {
+      // Both OrderService and Order entity send OrderCreated
+      const result = await getProducersOfMessage({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.producers.some((p: ProducerConsumer) => p.id === 'OrderService')).toBe(true);
+        expect(result.producers.some((p: ProducerConsumer) => p.id === 'Order')).toBe(true);
+        expect(result.count).toBeGreaterThanOrEqual(2);
+      }
+    });
+
+    it('finds entities that send InventoryUpdated', async () => {
+      // InventoryItem entity sends InventoryUpdated event
+      const result = await getProducersOfMessage({
+        messageId: 'InventoryUpdated',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // Should find both InventoryService AND InventoryItem entity
+        expect(result.producers.some((p: ProducerConsumer) => p.id === 'InventoryService')).toBe(true);
+        expect(result.producers.some((p: ProducerConsumer) => p.id === 'InventoryItem')).toBe(true);
+      }
+    });
+  });
+
+  describe('getConsumersOfMessage should include entities', () => {
+    it('finds entities that receive a message', async () => {
+      // Order entity receives CreateOrder command
+      const result = await getConsumersOfMessage({
+        messageId: 'CreateOrder',
+        messageVersion: '1.0.0',
+        messageCollection: 'commands',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // Should find the Order entity as a consumer
+        expect(result.consumers.some((c: ProducerConsumer) => c.id === 'Order')).toBe(true);
+      }
+    });
+
+    it('finds entities that receive OrderCreated event', async () => {
+      // InventoryItem entity receives OrderCreated to reserve stock
+      const result = await getConsumersOfMessage({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // Should find InventoryItem entity alongside InventoryService
+        expect(result.consumers.some((c: ProducerConsumer) => c.id === 'InventoryItem')).toBe(true);
+      }
+    });
+  });
+
+  describe('analyzeChangeImpact should include entities', () => {
+    it('includes entities in impact analysis', async () => {
+      const result = await analyzeChangeImpact({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // Should count entities as producers
+        expect(result.producers.some((p: any) => p.id === 'Order')).toBe(true);
+        // Should count entities as consumers
+        expect(result.consumers.some((c: any) => c.id === 'InventoryItem')).toBe(true);
+      }
+    });
+
+    it('includes entity owners in affected teams', async () => {
+      const result = await analyzeChangeImpact({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // Entity owners should be in affected teams
+        // Order entity is owned by 'order-team' (already present from OrderService)
+        // InventoryItem entity is owned by 'inventory-team'
+        expect(result.impact.teamsAffected).toContain('inventory-team');
+      }
+    });
+
+    it('counts entities in totalResourcesAffected but not totalServicesAffected', async () => {
+      const result = await analyzeChangeImpact({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // totalServicesAffected counts only services (OrderService, InventoryService, PaymentService)
+        // totalResourcesAffected counts services + entities (5 total: 3 services + 2 entities)
+        expect(result.impact.totalServicesAffected).toBeGreaterThanOrEqual(2);
+        expect(result.impact.totalResourcesAffected).toBeGreaterThanOrEqual(4);
+      }
+    });
+  });
+
+  describe('findMessageBySchemaId should include entities', () => {
+    it('includes entities in producers list', async () => {
+      const result = await findMessageBySchemaId({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        collection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.producers.some((p: ProducerConsumer) => p.id === 'Order')).toBe(true);
+      }
+    });
+
+    it('includes entities in consumers list', async () => {
+      const result = await findMessageBySchemaId({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        collection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.consumers.some((c: ProducerConsumer) => c.id === 'InventoryItem')).toBe(true);
+      }
+    });
+  });
+});
+
+// ============================================
 // Search Filter Tests
 // ============================================
 

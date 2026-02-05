@@ -351,8 +351,29 @@ export const mockEntities = [
       id: 'Order',
       name: 'Order',
       version: '1.0.0',
-      summary: 'Order entity',
+      summary: 'Order aggregate root entity',
       owners: ['order-team'],
+      // Entity sends OrderCreated event (same as OrderService)
+      sends: [{ id: 'OrderCreated', version: '1.0.0' }],
+      // Entity receives CreateOrder command
+      receives: [{ id: 'CreateOrder', version: '1.0.0' }],
+    },
+  },
+  {
+    id: 'InventoryItem-1.0.0',
+    slug: 'entities/InventoryItem',
+    collection: 'entities',
+    body: 'Inventory item entity description',
+    data: {
+      id: 'InventoryItem',
+      name: 'Inventory Item',
+      version: '1.0.0',
+      summary: 'Inventory item entity',
+      owners: ['inventory-team'],
+      // Entity sends InventoryUpdated event
+      sends: [{ id: 'InventoryUpdated', version: '1.0.0' }],
+      // Entity receives OrderCreated to reserve stock
+      receives: [{ id: 'OrderCreated', version: '1.0.0' }],
     },
   },
 ];

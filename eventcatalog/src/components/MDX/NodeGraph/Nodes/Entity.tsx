@@ -1,10 +1,31 @@
 import { CubeIcon } from '@heroicons/react/16/solid';
-import type { CollectionEntry } from 'astro:content';
 import { Handle, Position } from '@xyflow/react';
 import { getIcon } from '@utils/badges';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { buildUrl } from '@utils/url-builder';
 import { useState } from 'react';
+
+interface EntityData {
+  id: string;
+  name: string;
+  version: string;
+  properties?: Array<{
+    name: string;
+    type: string;
+    required?: boolean;
+    description?: string;
+    references?: string;
+  }>;
+  aggregateRoot?: boolean;
+  styles?: {
+    node?: {
+      color?: string;
+      label?: string;
+    };
+    icon?: string;
+  };
+  sidebar?: unknown;
+}
 
 interface Data {
   title: string;
@@ -12,7 +33,7 @@ interface Data {
   bgColor: string;
   color: string;
   mode: 'simple' | 'full';
-  entity: CollectionEntry<'entities'>;
+  entity: EntityData;
   showTarget?: boolean;
   showSource?: boolean;
   externalToDomain?: boolean;
@@ -30,7 +51,7 @@ function classNames(...classes: any) {
 
 export default function EntityNode({ data, sourcePosition, targetPosition }: any) {
   const { mode, entity, externalToDomain, domainName } = data as Data;
-  const { name, version, properties = [], aggregateRoot, styles, sidebar } = entity.data;
+  const { id, name, version, properties = [], aggregateRoot, styles } = entity;
 
   const { node: { color = 'blue', label } = {}, icon = 'CubeIcon' } = styles || {};
 
@@ -59,9 +80,9 @@ export default function EntityNode({ data, sourcePosition, targetPosition }: any
               <span className="font-semibold text-gray-800 text-sm">{name}</span>
               {aggregateRoot && <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded">AR</span>}
             </div>
-            {/* {externalToDomain && domainName && ( */}
-            <div className="text-xs text-yellow-800 font-medium mt-1">from {domainName} domain</div>
-            {/* )} */}
+            {externalToDomain && domainName && (
+              <div className="text-xs text-yellow-800 font-medium mt-1">from {domainName} domain</div>
+            )}
             {mode === 'full' && <div className="text-xs text-gray-600 mt-1">v{version}</div>}
           </div>
 
@@ -145,7 +166,7 @@ export default function EntityNode({ data, sourcePosition, targetPosition }: any
             asChild
             className="text-sm px-2 py-1.5 outline-none cursor-pointer hover:bg-orange-100 rounded-sm flex items-center"
           >
-            <a href={buildUrl(`/docs/entities/${entity.data.id}/${version}`)}>Read documentation</a>
+            <a href={buildUrl(`/docs/entities/${id}/${version}`)}>Read documentation</a>
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>
