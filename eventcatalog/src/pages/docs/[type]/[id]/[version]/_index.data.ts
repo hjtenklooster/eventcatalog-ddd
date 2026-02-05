@@ -21,6 +21,7 @@ export class Page extends HybridPage {
       'flows',
       'channels',
       'entities',
+      'policies',
       'containers',
       'data-products',
     ];

@@ -21,6 +21,7 @@ import {
   StarIcon,
   Square2StackIcon,
   ArrowsRightLeftIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid, CircleStackIcon } from '@heroicons/react/24/solid';
 import { useStore } from '@nanostores/react';
@@ -36,6 +37,7 @@ const typeIcons: any = {
   Command: ChatBubbleLeftIcon,
   Query: QueryIcon,
   Entity: CubeIcon,
+  Policy: Cog6ToothIcon,
   Channel: ArrowsRightLeftIcon,
   Team: UserGroupIcon,
   User: UserIcon,
@@ -54,6 +56,7 @@ const typeColors: any = {
   Command: 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 ring-blue-200 dark:ring-blue-500/30',
   Query: 'text-green-500 dark:text-green-400 bg-green-50 dark:bg-green-500/10 ring-green-200 dark:ring-green-500/30',
   Entity: 'text-purple-500 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 ring-purple-200 dark:ring-purple-500/30',
+  Policy: 'text-purple-500 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 ring-purple-200 dark:ring-purple-500/30',
   Channel: 'text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 ring-indigo-200 dark:ring-indigo-500/30',
   Team: 'text-teal-500 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10 ring-teal-200 dark:ring-teal-500/30',
   User: 'text-cyan-500 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 ring-cyan-200 dark:ring-cyan-500/30',

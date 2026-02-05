@@ -229,6 +229,10 @@ export default function NestedSideBar() {
         { pattern: /^\/docs\/entities\/([^/]+)\/([^/]+)/, type: 'entity' },
         { pattern: /^\/visualiser\/entities\/([^/]+)\/([^/]+)/, type: 'entity' },
         { pattern: /^\/architecture\/entities\/([^/]+)\/([^/]+)/, type: 'entity' },
+        // Policies
+        { pattern: /^\/docs\/policies\/([^/]+)\/([^/]+)/, type: 'policy' },
+        { pattern: /^\/visualiser\/policies\/([^/]+)\/([^/]+)/, type: 'policy' },
+        { pattern: /^\/architecture\/policies\/([^/]+)\/([^/]+)/, type: 'policy' },
       ];
 
       // URL patterns without version (language pages, etc)

@@ -1,0 +1,42 @@
+---
+id: AutoConfirmOrder
+name: Auto Confirm Order
+version: 1.0.0
+summary: Automatically creates a shipment when payment is completed.
+owners:
+  - dboyne
+receives:
+  - id: PaymentComplete
+    version: 0.0.2
+sends:
+  - id: CreateShipment
+    version: 0.0.1
+conditions:
+  - "Order.status = 'pending'"
+  - "Payment.status = 'completed'"
+---
+
+import Footer from '@catalog/components/footer.astro';
+
+## Policy Rule
+
+**Whenever** `PaymentComplete` is emitted,
+**If** the order is pending and payment is completed,
+**Then** dispatch `CreateShipment` command.
+
+## Business Context
+
+This policy automates the order fulfillment process by ensuring that once a payment is successfully completed, the order is immediately ready for shipping. This reduces manual intervention and speeds up the delivery process.
+
+### Conditions
+
+The policy evaluates the following conditions before dispatching the command:
+
+1. **Order Status**: The order must be in a `pending` state
+2. **Payment Status**: The payment must be `completed`
+
+## Architecture Diagram
+
+<NodeGraph />
+
+<Footer />

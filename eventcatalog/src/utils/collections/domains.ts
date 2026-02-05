@@ -80,11 +80,12 @@ export const getDomains = async ({
   }
 
   // 1. Fetch collections (always fetch messages to hydrate domain-level sends/receives)
-  const [allDomains, allServices, allEntities, allFlows, allEvents, allCommands, allQueries, allContainers, allDataProducts] =
+  const [allDomains, allServices, allEntities, allPolicies, allFlows, allEvents, allCommands, allQueries, allContainers, allDataProducts] =
     await Promise.all([
       getCollection('domains'),
       getCollection('services'),
       getCollection('entities'),
+      getCollection('policies'),
       getCollection('flows'),
       getCollection('events'),
       getCollection('commands'),
@@ -101,6 +102,7 @@ export const getDomains = async ({
   const domainMap = createVersionedMap(allDomains);
   const serviceMap = createVersionedMap(allServices);
   const entityMap = createVersionedMap(allEntities);
+  const policyMap = createVersionedMap(allPolicies);
   const flowMap = createVersionedMap(allFlows);
   const dataProductMap = createVersionedMap(allDataProducts);
 
@@ -161,6 +163,12 @@ export const getDomains = async ({
         .map((entity: { id: string; version: string | undefined }) => findInMap(entityMap, entity.id, entity.version))
         .filter((e): e is CollectionEntry<'entities'> => !!e);
 
+      // Resolve Policies
+      const policiesInDomain = domain.data.policies || [];
+      const policies = policiesInDomain
+        .map((policy: { id: string; version: string | undefined }) => findInMap(policyMap, policy.id, policy.version))
+        .filter((p): p is CollectionEntry<'policies'> => !!p);
+
       // Resolve Flows
       const flowsInDomain = domain.data.flows || [];
       const flows = flowsInDomain
@@ -219,6 +227,7 @@ export const getDomains = async ({
           services: services as any, // Cast to avoid deep type issues with enriched data
           domains: subDomains as any,
           entities: entities as any,
+          policies: policies as any,
           flows: flows as any,
           'data-products': dataProducts as any,
           sends: domainSends as any,
