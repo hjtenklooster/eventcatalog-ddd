@@ -12,7 +12,11 @@ import {
 } from './shared';
 import { isVisualiserEnabled } from '@utils/feature';
 
-type ProducerConsumer = CollectionEntry<'services'> | CollectionEntry<'data-products'> | CollectionEntry<'entities'>;
+type ProducerConsumer =
+  | CollectionEntry<'services'>
+  | CollectionEntry<'data-products'>
+  | CollectionEntry<'entities'>
+  | CollectionEntry<'policies'>;
 
 const getCollectionPrefix = (collection: ProducerConsumer['collection']): string => {
   switch (collection) {
@@ -20,6 +24,8 @@ const getCollectionPrefix = (collection: ProducerConsumer['collection']): string
       return 'entity';
     case 'data-products':
       return 'data-product';
+    case 'policies':
+      return 'policy';
     default:
       return 'service';
   }
@@ -34,8 +40,14 @@ export const buildMessageNode = (
   const consumers = message.data.consumers || [];
   const collection = message.collection;
 
+  // Policy relationships
+  const triggeredPolicies = (message.data as any).triggeredPolicies || [];
+  const dispatchingPolicies = (message.data as any).dispatchingPolicies || [];
+
   const renderProducers = producers.length > 0 && shouldRenderSideBarSection(message, 'producers');
   const renderConsumers = consumers.length > 0 && shouldRenderSideBarSection(message, 'consumers');
+  const renderTriggeredPolicies = collection === 'events' && triggeredPolicies.length > 0;
+  const renderDispatchingPolicies = collection === 'commands' && dispatchingPolicies.length > 0;
   const renderRepository = message.data.repository && shouldRenderSideBarSection(message, 'repository');
 
   // Determine badge based on collection type
@@ -117,6 +129,22 @@ export const buildMessageNode = (
           return `${getCollectionPrefix(consumer.collection)}:${consumer.data.id}:${consumer.data.version}`;
         }),
         visible: consumers.length > 0,
+      },
+      renderTriggeredPolicies && {
+        type: 'group',
+        title: 'Triggers Policies',
+        icon: 'Cog',
+        pages: (triggeredPolicies as CollectionEntry<'policies'>[]).map((policy) => {
+          return `policy:${policy.data.id}:${policy.data.version}`;
+        }),
+      },
+      renderDispatchingPolicies && {
+        type: 'group',
+        title: 'Dispatched By Policies',
+        icon: 'Cog',
+        pages: (dispatchingPolicies as CollectionEntry<'policies'>[]).map((policy) => {
+          return `policy:${policy.data.id}:${policy.data.version}`;
+        }),
       },
       renderOwners && buildOwnersSection(owners),
       renderRepository && buildRepositorySection(message.data.repository as { url: string; language: string }),

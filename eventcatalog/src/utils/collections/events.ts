@@ -3,6 +3,7 @@ import type { CollectionEntry } from 'astro:content';
 import path from 'path';
 import { createVersionedMap } from './util';
 import { hydrateProducersAndConsumers } from './messages';
+import { getPoliciesTriggeredByEvent } from './policies';
 import utils from '@eventcatalog/sdk';
 
 const PROJECT_DIR = process.env.PROJECT_DIR || process.cwd();
@@ -36,12 +37,13 @@ export const getEvents = async ({ getAllVersions = true, hydrateServices = true 
   }
 
   // 1. Fetch collections in parallel
-  const [allEvents, allServices, allChannels, allDataProducts, allEntities] = await Promise.all([
+  const [allEvents, allServices, allChannels, allDataProducts, allEntities, allPolicies] = await Promise.all([
     getCollection('events'),
     getCollection('services'),
     getCollection('channels'),
     getCollection('data-products'),
     getCollection('entities'),
+    getCollection('policies'),
   ]);
 
   // 2. Build optimized maps
@@ -67,14 +69,18 @@ export const getEvents = async ({ getAllVersions = true, hydrateServices = true 
       const latestVersion = eventVersions[0]?.data.version || event.data.version;
       const versions = eventVersions.map((e) => e.data.version);
 
-      // Find producers and consumers (services + data products + entities)
+      // Find producers and consumers (services + data products + entities + policies)
       const { producers, consumers } = hydrateProducersAndConsumers({
         message: { data: { ...event.data, latestVersion } },
         services: allServices,
         dataProducts: allDataProducts,
         entities: allEntities,
+        policies: allPolicies,
         hydrate: hydrateServices,
       });
+
+      // Find policies triggered by this event
+      const policiesTriggeredByEvent = getPoliciesTriggeredByEvent(allPolicies, event);
 
       // Find Channels
       const messageChannels = event.data.channels || [];
@@ -93,6 +99,7 @@ export const getEvents = async ({ getAllVersions = true, hydrateServices = true 
           messageChannels: channelsForEvent,
           producers: producers as any, // Cast for hydration flexibility
           consumers: consumers as any,
+          triggeredPolicies: policiesTriggeredByEvent as any,
           versions,
           latestVersion,
         },
