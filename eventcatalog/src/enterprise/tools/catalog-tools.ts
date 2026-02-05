@@ -274,11 +274,14 @@ export async function findResourcesByOwner(params: { ownerId: string }) {
 }
 
 /**
- * Get services that produce (send) a specific message
+ * Get services and entities that produce (send) a specific message
  */
 export async function getProducersOfMessage(params: { messageId: string; messageVersion: string; messageCollection: string }) {
-  const services = await getCollection('services');
-  const message = await getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`);
+  const [services, entities, message] = await Promise.all([
+    getCollection('services'),
+    getCollection('entities'),
+    getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`),
+  ]);
 
   if (!message) {
     return {
@@ -286,14 +289,30 @@ export async function getProducersOfMessage(params: { messageId: string; message
     };
   }
 
-  const producers = services.filter((service) => {
-    const sends = (service.data as any).sends || [];
+  const filterBySends = (resource: any) => {
+    const sends = (resource.data as any).sends || [];
     return sends.some((send: any) => {
       const idMatch = send.id === params.messageId;
       if (!send.version || send.version === 'latest') return idMatch;
       return idMatch && send.version === params.messageVersion;
     });
-  });
+  };
+
+  const serviceProducers = services.filter(filterBySends);
+  const entityProducers = entities.filter(filterBySends);
+
+  const producers = [
+    ...serviceProducers.map((s) => ({
+      id: (s.data as any).id,
+      version: (s.data as any).version,
+      name: (s.data as any).name || (s.data as any).id,
+    })),
+    ...entityProducers.map((e) => ({
+      id: (e.data as any).id,
+      version: (e.data as any).version,
+      name: (e.data as any).name || (e.data as any).id,
+    })),
+  ];
 
   return {
     message: {
@@ -301,21 +320,20 @@ export async function getProducersOfMessage(params: { messageId: string; message
       version: params.messageVersion,
       collection: params.messageCollection,
     },
-    producers: producers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-    })),
+    producers,
     count: producers.length,
   };
 }
 
 /**
- * Get services that consume (receive) a specific message
+ * Get services and entities that consume (receive) a specific message
  */
 export async function getConsumersOfMessage(params: { messageId: string; messageVersion: string; messageCollection: string }) {
-  const services = await getCollection('services');
-  const message = await getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`);
+  const [services, entities, message] = await Promise.all([
+    getCollection('services'),
+    getCollection('entities'),
+    getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`),
+  ]);
 
   if (!message) {
     return {
@@ -323,14 +341,30 @@ export async function getConsumersOfMessage(params: { messageId: string; message
     };
   }
 
-  const consumers = services.filter((service) => {
-    const receives = (service.data as any).receives || [];
+  const filterByReceives = (resource: any) => {
+    const receives = (resource.data as any).receives || [];
     return receives.some((receive: any) => {
       const idMatch = receive.id === params.messageId;
       if (!receive.version || receive.version === 'latest') return idMatch;
       return idMatch && receive.version === params.messageVersion;
     });
-  });
+  };
+
+  const serviceConsumers = services.filter(filterByReceives);
+  const entityConsumers = entities.filter(filterByReceives);
+
+  const consumers = [
+    ...serviceConsumers.map((s) => ({
+      id: (s.data as any).id,
+      version: (s.data as any).version,
+      name: (s.data as any).name || (s.data as any).id,
+    })),
+    ...entityConsumers.map((e) => ({
+      id: (e.data as any).id,
+      version: (e.data as any).version,
+      name: (e.data as any).name || (e.data as any).id,
+    })),
+  ];
 
   return {
     message: {
@@ -338,22 +372,21 @@ export async function getConsumersOfMessage(params: { messageId: string; message
       version: params.messageVersion,
       collection: params.messageCollection,
     },
-    consumers: consumers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-    })),
+    consumers,
     count: consumers.length,
   };
 }
 
 /**
  * Analyze the impact of changing a message (event, command, query)
- * Returns all affected services (producers and consumers) and their owners
+ * Returns all affected services and entities (producers and consumers) and their owners
  */
 export async function analyzeChangeImpact(params: { messageId: string; messageVersion: string; messageCollection: string }) {
-  const services = await getCollection('services');
-  const message = await getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`);
+  const [services, entities, message] = await Promise.all([
+    getCollection('services'),
+    getCollection('entities'),
+    getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`),
+  ]);
 
   if (!message) {
     return {
@@ -361,22 +394,30 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
     };
   }
 
-  // Find producers
-  const producers = services.filter((service) => {
-    const sends = (service.data as any).sends || [];
+  const filterBySends = (resource: any) => {
+    const sends = (resource.data as any).sends || [];
     return sends.some((send: any) => send.id === params.messageId);
-  });
+  };
 
-  // Find consumers
-  const consumers = services.filter((service) => {
-    const receives = (service.data as any).receives || [];
+  const filterByReceives = (resource: any) => {
+    const receives = (resource.data as any).receives || [];
     return receives.some((receive: any) => receive.id === params.messageId);
-  });
+  };
+
+  // Find producers (services and entities)
+  const serviceProducers = services.filter(filterBySends);
+  const entityProducers = entities.filter(filterBySends);
+  const allProducers = [...serviceProducers, ...entityProducers];
+
+  // Find consumers (services and entities)
+  const serviceConsumers = services.filter(filterByReceives);
+  const entityConsumers = entities.filter(filterByReceives);
+  const allConsumers = [...serviceConsumers, ...entityConsumers];
 
   // Collect all affected teams/owners
   const affectedOwners = new Set<string>();
-  [...producers, ...consumers].forEach((service) => {
-    const owners = (service.data as any).owners || [];
+  [...allProducers, ...allConsumers].forEach((resource) => {
+    const owners = (resource.data as any).owners || [];
     owners.forEach((o: any) => {
       const ownerId = typeof o === 'string' ? o : o.id;
       affectedOwners.add(ownerId);
@@ -390,6 +431,13 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
     affectedOwners.add(ownerId);
   });
 
+  const mapResource = (r: any) => ({
+    id: (r.data as any).id,
+    version: (r.data as any).version,
+    name: (r.data as any).name || (r.data as any).id,
+    owners: (r.data as any).owners || [],
+  });
+
   return {
     message: {
       id: params.messageId,
@@ -398,23 +446,13 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
       name: (message.data as any).name || params.messageId,
     },
     impact: {
-      producerCount: producers.length,
-      consumerCount: consumers.length,
-      totalServicesAffected: new Set([...producers, ...consumers].map((s) => (s.data as any).id)).size,
+      producerCount: allProducers.length,
+      consumerCount: allConsumers.length,
+      totalServicesAffected: new Set([...allProducers, ...allConsumers].map((r) => (r.data as any).id)).size,
       teamsAffected: Array.from(affectedOwners),
     },
-    producers: producers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-      owners: (s.data as any).owners || [],
-    })),
-    consumers: consumers.map((s) => ({
-      id: (s.data as any).id,
-      version: (s.data as any).version,
-      name: (s.data as any).name || (s.data as any).id,
-      owners: (s.data as any).owners || [],
-    })),
+    producers: allProducers.map(mapResource),
+    consumers: allConsumers.map(mapResource),
   };
 }
 
@@ -577,17 +615,28 @@ export async function findMessageBySchemaId(params: {
     const matches = getItemsFromCollectionByIdAndSemverOrLatest(collection, params.messageId, params.messageVersion);
     const resource = matches[0];
     if (resource) {
-      // Get producers and consumers
-      const services = await getCollection('services');
+      // Get producers and consumers (services and entities)
+      const [services, entities] = await Promise.all([getCollection('services'), getCollection('entities')]);
 
-      const producers = services.filter((service) => {
-        const sends = (service.data as any).sends || [];
+      const filterBySends = (r: any) => {
+        const sends = (r.data as any).sends || [];
         return sends.some((send: any) => send.id === params.messageId);
-      });
+      };
 
-      const consumers = services.filter((service) => {
-        const receives = (service.data as any).receives || [];
+      const filterByReceives = (r: any) => {
+        const receives = (r.data as any).receives || [];
         return receives.some((receive: any) => receive.id === params.messageId);
+      };
+
+      const serviceProducers = services.filter(filterBySends);
+      const entityProducers = entities.filter(filterBySends);
+      const serviceConsumers = services.filter(filterByReceives);
+      const entityConsumers = entities.filter(filterByReceives);
+
+      const mapResource = (r: any) => ({
+        id: (r.data as any).id,
+        version: (r.data as any).version,
+        name: (r.data as any).name || (r.data as any).id,
       });
 
       return {
@@ -599,16 +648,8 @@ export async function findMessageBySchemaId(params: {
           summary: (resource.data as any).summary,
           owners: (resource.data as any).owners || [],
         },
-        producers: producers.map((s) => ({
-          id: (s.data as any).id,
-          version: (s.data as any).version,
-          name: (s.data as any).name || (s.data as any).id,
-        })),
-        consumers: consumers.map((s) => ({
-          id: (s.data as any).id,
-          version: (s.data as any).version,
-          name: (s.data as any).name || (s.data as any).id,
-        })),
+        producers: [...serviceProducers.map(mapResource), ...entityProducers.map(mapResource)],
+        consumers: [...serviceConsumers.map(mapResource), ...entityConsumers.map(mapResource)],
       };
     }
   }
@@ -928,10 +969,12 @@ export const toolDescriptions = {
   getSchemaForResource:
     'Use this tool to get the schema or specifications (openapi or asyncapi or graphql) for a resource by its id and version',
   findResourcesByOwner: 'Use this tool to find all resources (services, events, commands, etc.) owned by a specific team or user',
-  getProducersOfMessage: 'Use this tool to find which services produce (send) a specific message (event, command, or query)',
-  getConsumersOfMessage: 'Use this tool to find which services consume (receive) a specific message (event, command, or query)',
+  getProducersOfMessage:
+    'Use this tool to find which services and entities produce (send) a specific message (event, command, or query)',
+  getConsumersOfMessage:
+    'Use this tool to find which services and entities consume (receive) a specific message (event, command, or query)',
   analyzeChangeImpact:
-    'Use this tool to analyze the impact of changing a message. Returns all affected services (producers and consumers), the teams that own them, and the blast radius of the change',
+    'Use this tool to analyze the impact of changing a message. Returns all affected services and entities (producers and consumers), the teams that own them, and the blast radius of the change',
   explainBusinessFlow:
     'Use this tool to get detailed information about a business flow (state machine). Returns the flow definition, steps, mermaid diagram if available, and related services',
   getTeams:
