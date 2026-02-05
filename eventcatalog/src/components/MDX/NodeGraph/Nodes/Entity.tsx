@@ -80,9 +80,9 @@ export default function EntityNode({ data, sourcePosition, targetPosition }: any
               <span className="font-semibold text-gray-800 text-sm">{name}</span>
               {aggregateRoot && <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded">AR</span>}
             </div>
-            {/* {externalToDomain && domainName && ( */}
-            <div className="text-xs text-yellow-800 font-medium mt-1">from {domainName} domain</div>
-            {/* )} */}
+            {externalToDomain && domainName && (
+              <div className="text-xs text-yellow-800 font-medium mt-1">from {domainName} domain</div>
+            )}
             {mode === 'full' && <div className="text-xs text-gray-600 mt-1">v{version}</div>}
           </div>
 

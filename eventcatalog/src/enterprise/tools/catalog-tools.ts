@@ -443,7 +443,11 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
     impact: {
       producerCount: allProducers.length,
       consumerCount: allConsumers.length,
-      totalServicesAffected: new Set([...allProducers, ...allConsumers].map(({ resource }) => (resource.data as any).id)).size,
+      totalServicesAffected: new Set(
+        [...allProducers, ...allConsumers]
+          .filter(({ collection }) => collection === 'services')
+          .map(({ resource }) => (resource.data as any).id)
+      ).size,
       totalResourcesAffected: new Set([...allProducers, ...allConsumers].map(({ resource }) => (resource.data as any).id)).size,
       teamsAffected: Array.from(affectedOwners),
     },

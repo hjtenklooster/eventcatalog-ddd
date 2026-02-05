@@ -995,7 +995,7 @@ describe('Entity Support in Message Analysis', () => {
       }
     });
 
-    it('counts entities in totalServicesAffected (or total resources)', async () => {
+    it('counts entities in totalResourcesAffected but not totalServicesAffected', async () => {
       const result = await analyzeChangeImpact({
         messageId: 'OrderCreated',
         messageVersion: '1.0.0',
@@ -1003,11 +1003,10 @@ describe('Entity Support in Message Analysis', () => {
       });
       expect('error' in result).toBe(false);
       if (!('error' in result)) {
-        // Currently only counts services, should count entities too
-        // Expected: OrderService (producer) + InventoryService + PaymentService (consumers)
-        //         + Order (producer entity) + InventoryItem (consumer entity)
-        // Total unique: 5 (3 services + 2 entities)
-        expect(result.impact.totalServicesAffected).toBeGreaterThanOrEqual(4);
+        // totalServicesAffected counts only services (OrderService, InventoryService, PaymentService)
+        // totalResourcesAffected counts services + entities (5 total: 3 services + 2 entities)
+        expect(result.impact.totalServicesAffected).toBeGreaterThanOrEqual(2);
+        expect(result.impact.totalResourcesAffected).toBeGreaterThanOrEqual(4);
       }
     });
   });
