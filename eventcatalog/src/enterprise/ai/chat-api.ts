@@ -99,6 +99,8 @@ There are many different resource types in EventCatalog, including:
   - example docs url: /docs/channels/MyChannel/1.0.0
 - Entities (collection name 'entities') (data objects)
   - example docs url: /docs/entities/MyEntity/1.0.0
+- Policies (collection name 'policies') (reactive business rules: Event → Policy → Command)
+  - example docs url: /docs/policies/MyPolicy/1.0.0
 - Containers (collection name 'containers') (at the moment these are data stores (databases))
   - example docs url: /docs/containers/MyContainer/1.0.0
 - Data Products (collection name 'data-products') (data products that have inputs and outputs, and may have data contracts)
