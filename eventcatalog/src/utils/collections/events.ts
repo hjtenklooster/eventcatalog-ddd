@@ -4,6 +4,7 @@ import path from 'path';
 import { createVersionedMap } from './util';
 import { hydrateProducersAndConsumers } from './messages';
 import { getPoliciesTriggeredByEvent } from './policies';
+import { getViewsSubscribedToEvent } from './views';
 import utils from '@eventcatalog/sdk';
 
 const PROJECT_DIR = process.env.PROJECT_DIR || process.cwd();
@@ -37,13 +38,14 @@ export const getEvents = async ({ getAllVersions = true, hydrateServices = true 
   }
 
   // 1. Fetch collections in parallel
-  const [allEvents, allServices, allChannels, allDataProducts, allEntities, allPolicies] = await Promise.all([
+  const [allEvents, allServices, allChannels, allDataProducts, allEntities, allPolicies, allViews] = await Promise.all([
     getCollection('events'),
     getCollection('services'),
     getCollection('channels'),
     getCollection('data-products'),
     getCollection('entities'),
     getCollection('policies'),
+    getCollection('views'),
   ]);
 
   // 2. Build optimized maps
@@ -81,6 +83,9 @@ export const getEvents = async ({ getAllVersions = true, hydrateServices = true 
       // Find policies triggered by this event
       const policiesTriggeredByEvent = getPoliciesTriggeredByEvent(allPolicies, event);
 
+      // Find views that subscribe to this event
+      const viewsSubscribedToEvent = getViewsSubscribedToEvent(allViews, event);
+
       // Find Channels
       const messageChannels = event.data.channels || [];
       // This is O(N*M) where N is event channels and M is all channels.
@@ -99,6 +104,7 @@ export const getEvents = async ({ getAllVersions = true, hydrateServices = true 
           producers: producers as any, // Cast for hydration flexibility
           consumers: consumers as any,
           triggeredPolicies: policiesTriggeredByEvent as any,
+          subscribedByViews: viewsSubscribedToEvent as any,
           versions,
           latestVersion,
         },

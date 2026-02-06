@@ -4,6 +4,7 @@ import path from 'path';
 import { createVersionedMap } from './util';
 import { hydrateProducersAndConsumers } from './messages';
 import { getPoliciesDispatchingCommand } from './policies';
+import { getActorsIssuingCommand } from './actors';
 import utils from '@eventcatalog/sdk';
 
 const PROJECT_DIR = process.env.PROJECT_DIR || process.cwd();
@@ -37,13 +38,14 @@ export const getCommands = async ({ getAllVersions = true, hydrateServices = tru
   }
 
   // 1. Fetch collections in parallel
-  const [allCommands, allServices, allChannels, allDataProducts, allEntities, allPolicies] = await Promise.all([
+  const [allCommands, allServices, allChannels, allDataProducts, allEntities, allPolicies, allActors] = await Promise.all([
     getCollection('commands'),
     getCollection('services'),
     getCollection('channels'),
     getCollection('data-products'),
     getCollection('entities'),
     getCollection('policies'),
+    getCollection('actors'),
   ]);
 
   // 2. Build optimized maps
@@ -78,6 +80,9 @@ export const getCommands = async ({ getAllVersions = true, hydrateServices = tru
       // Find policies that dispatch this command
       const policiesDispatchingCommand = getPoliciesDispatchingCommand(allPolicies, command);
 
+      // Find actors that issue this command
+      const actorsIssuingCommand = getActorsIssuingCommand(allActors, command);
+
       // Find Channels
       const messageChannels = command.data.channels || [];
       const channelsForCommand = allChannels.filter((c) => messageChannels.some((channel) => c.data.id === channel.id));
@@ -97,6 +102,7 @@ export const getCommands = async ({ getAllVersions = true, hydrateServices = tru
           producers: producers as any, // Cast for hydration flexibility
           consumers: consumers as any,
           dispatchingPolicies: policiesDispatchingCommand as any,
+          issuedByActors: actorsIssuingCommand as any,
           versions,
           latestVersion,
         },

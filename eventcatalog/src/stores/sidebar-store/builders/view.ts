@@ -14,6 +14,7 @@ import {
 export const buildViewNode = (view: View, owners: any[], context: ResourceGroupContext): NavNode => {
   const subscribesMessages = view.data.subscribes || [];
   const informsActors = view.data.informs || [];
+  const readByActors = (view.data as any).readByActors || [];
 
   const hasAttachments = (view.data.attachments?.length ?? 0) > 0;
   const viewDiagrams = view.data.diagrams || [];
@@ -71,6 +72,13 @@ export const buildViewNode = (view: View, owners: any[], context: ResourceGroupC
         title: 'Informs',
         icon: 'User',
         pages: informsActors.map((actor) => `actor:${actor.data.id}:${actor.data.version}`),
+      },
+      // Read By Actors (actors that declare they read this view, excluding informs)
+      readByActors.length > 0 && {
+        type: 'group',
+        title: 'Read By Actors',
+        icon: 'User',
+        pages: readByActors.map((actor: any) => `actor:${actor.data.id}:${actor.data.version}`),
       },
       renderOwners && buildOwnersSection(owners),
       renderRepository && buildRepositorySection(view.data.repository as { url: string; language: string }),

@@ -6,9 +6,9 @@ summary: Read model providing order overview data for support agents.
 owners:
   - dboyne
 subscribes:
-  - id: OrderCreated
+  - id: OrderConfirmed
     version: "0.0.1"
-  - id: OrderStatusUpdated
+  - id: OrderAmended
     version: "0.0.1"
 informs:
   - id: CustomerSupportAgent
@@ -19,17 +19,17 @@ import Footer from '@catalog/components/footer.astro';
 
 ## Overview
 
-The Order Summary View is a read model that combines order creation and status update events into a denormalized projection optimized for customer support workflows.
+The Order Summary View is a read model that combines order confirmation and amendment events into a denormalized projection optimized for customer support workflows.
 
 ## Data Shape
 
 | Field | Source Event | Description |
 |-------|-------------|-------------|
-| orderId | OrderCreated | Unique order identifier |
-| status | OrderStatusUpdated | Current order status |
-| customerName | OrderCreated | Customer display name |
-| totalAmount | OrderCreated | Order total |
-| lastUpdated | OrderStatusUpdated | Last status change timestamp |
+| orderId | OrderConfirmed | Unique order identifier |
+| status | OrderAmended | Current order status |
+| customerName | OrderConfirmed | Customer display name |
+| totalAmount | OrderConfirmed | Order total |
+| lastUpdated | OrderAmended | Last amendment timestamp |
 
 <NodeGraph />
 

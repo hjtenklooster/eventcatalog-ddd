@@ -3,6 +3,7 @@ import type { CollectionEntry } from 'astro:content';
 import path from 'path';
 import utils from '@eventcatalog/sdk';
 import { createVersionedMap, satisfies, findInMap } from './util';
+import { getActorsReadingView } from './actors';
 
 const CACHE_ENABLED = process.env.DISABLE_EVENTCATALOG_CACHE !== 'true';
 
@@ -13,6 +14,7 @@ export type View = Omit<CollectionEntry<'views'>, 'data'> & {
     domains?: CollectionEntry<'domains'>[];
     subscribes?: CollectionEntry<'events'>[];
     informs?: CollectionEntry<'actors'>[];
+    readByActors?: CollectionEntry<'actors'>[];
     subscribesRaw?: Array<{ id: string; version?: string }>;
     informsRaw?: Array<{ id: string; version?: string }>;
   };
@@ -81,6 +83,12 @@ export const getViews = async ({ getAllVersions = true }: Props = {}): Promise<V
         .map((a) => findInMap(actorMap, a.id, a.version))
         .filter((a): a is CollectionEntry<'actors'> => !!a);
 
+      // Reverse lookup: actors that declare they read this view (deduplicated against informs)
+      const informsIds = new Set(informs.map((a) => `${a.data.id}:${a.data.version}`));
+      const readByActors = getActorsReadingView(allActors, view).filter(
+        (a) => !informsIds.has(`${a.data.id}:${a.data.version}`)
+      );
+
       const subscribesRaw = view.data.subscribes || [];
       const informsRaw = view.data.informs || [];
 
@@ -100,6 +108,7 @@ export const getViews = async ({ getAllVersions = true }: Props = {}): Promise<V
           domains: domainsThatReferenceView,
           subscribes,
           informs,
+          readByActors,
           subscribesRaw,
           informsRaw,
         },
