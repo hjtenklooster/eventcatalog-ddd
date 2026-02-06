@@ -98,3 +98,47 @@ export const mockEntities = [
 ];
 
 export const mockChannels: any[] = [];
+
+export const mockDomains = [
+  {
+    id: 'OrderDomain',
+    slug: 'OrderDomain',
+    collection: 'domains',
+    data: {
+      id: 'OrderDomain',
+      version: '0.0.1',
+      views: [
+        {
+          id: 'OrderSummaryView',
+          version: '1.0.0',
+        },
+      ],
+    },
+  },
+];
+
+// A view with no subscribes/informs for testing empty arrays
+export const mockSimpleView = {
+  id: 'SimpleView-1.0.0',
+  slug: 'SimpleView',
+  collection: 'views',
+  data: {
+    id: 'SimpleView',
+    name: 'Simple View',
+    version: '1.0.0',
+  },
+};
+
+// Older version of OrderSummaryView for versioning tests
+export const mockOrderSummaryViewOld = {
+  id: 'OrderSummaryView-0.0.1',
+  slug: 'OrderSummaryView',
+  collection: 'views',
+  data: {
+    id: 'OrderSummaryView',
+    name: 'Order Summary View',
+    version: '0.0.1',
+    subscribes: [{ id: 'OrderConfirmed', version: '0.0.1' }],
+    informs: [{ id: 'CustomerSupportAgent', version: '1.0.0' }],
+  },
+};

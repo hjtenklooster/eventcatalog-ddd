@@ -96,3 +96,29 @@ export const mockEntities = [
 ];
 
 export const mockChannels: any[] = [];
+
+// An actor with no reads/issues for testing empty arrays
+export const mockSimpleActor = {
+  id: 'SimpleActor-1.0.0',
+  slug: 'SimpleActor',
+  collection: 'actors',
+  data: {
+    id: 'SimpleActor',
+    name: 'Simple Actor',
+    version: '1.0.0',
+  },
+};
+
+// Older version of CustomerSupportAgent for versioning tests
+export const mockCustomerSupportAgentOld = {
+  id: 'CustomerSupportAgent-0.0.1',
+  slug: 'CustomerSupportAgent',
+  collection: 'actors',
+  data: {
+    id: 'CustomerSupportAgent',
+    name: 'Customer Support Agent',
+    version: '0.0.1',
+    reads: [{ id: 'OrderSummaryView', version: '1.0.0' }],
+    issues: [{ id: 'UpdateInventory', version: '1.0.0' }],
+  },
+};
