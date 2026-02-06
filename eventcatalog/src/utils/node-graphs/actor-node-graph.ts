@@ -1,8 +1,19 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import dagre from 'dagre';
 import { type Node, type Edge, Position } from '@xyflow/react';
-import { createDagreGraph, generateIdForNode, calculatedNodes, createNode, createEdge, generatedIdForEdge, getColorFromString } from '@utils/node-graphs/utils/utils';
+import {
+  createDagreGraph,
+  generateIdForNode,
+  calculatedNodes,
+  createNode,
+  createEdge,
+  generatedIdForEdge,
+  getColorFromString,
+  getEdgeLabelForMessageAsSource,
+} from '@utils/node-graphs/utils/utils';
 import { findInMap, createVersionedMap } from '@utils/collections/util';
+import { getConsumersOfMessage } from '@utils/collections/services';
+import { getEntityConsumersOfMessage } from '@utils/collections/entities';
 
 type DagreGraph = any;
 
@@ -18,15 +29,19 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
   let nodes: Node[] = [];
   let edges: Edge[] = [];
 
-  const [actors, views, commands] = await Promise.all([
+  const [actors, views, commands, events, entities, services] = await Promise.all([
     getCollection('actors'),
     getCollection('views'),
     getCollection('commands'),
+    getCollection('events'),
+    getCollection('entities'),
+    getCollection('services'),
   ]);
 
   const actorMap = createVersionedMap(actors);
   const viewMap = createVersionedMap(views);
   const commandMap = createVersionedMap(commands);
+  const eventMap = createVersionedMap(events);
 
   const actor = findInMap(actorMap, id, version);
   if (!actor) return { nodes: [], edges: [] };
@@ -53,10 +68,12 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
     type: 'actor',
   });
 
-  // Left: views this actor reads
+  // Left: views this actor reads + events those views subscribe to
   for (const view of reads) {
+    const viewNodeId = generateIdForNode(view);
+
     nodes.push(createNode({
-      id: generateIdForNode(view),
+      id: viewNodeId,
       type: 'view',
       data: { mode, view: { ...view.data } },
       position: { x: 0, y: 0 },
@@ -64,17 +81,44 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
 
     edges.push(createEdge({
       id: generatedIdForEdge(view, actor),
-      source: generateIdForNode(view),
+      source: viewNodeId,
       target: actorNodeId,
       label: 'informs',
       data: { customColor: getColorFromString(view.data.id) },
     }));
+
+    // Left expansion: events this view subscribes to
+    const viewSubscribes = view.data.subscribes || [];
+    for (const subRef of viewSubscribes) {
+      const event = findInMap(eventMap, subRef.id, subRef.version);
+      if (!event) continue;
+
+      const eventNodeId = generateIdForNode(event);
+
+      nodes.push(createNode({
+        id: eventNodeId,
+        type: event.collection,
+        data: { mode, message: { ...event.data } },
+        position: { x: 0, y: 0 },
+      }));
+
+      // event --subscribes--> view
+      edges.push(createEdge({
+        id: generatedIdForEdge(event, view),
+        source: eventNodeId,
+        target: viewNodeId,
+        label: 'subscribes',
+        data: { customColor: getColorFromString(event.data.id) },
+      }));
+    }
   }
 
-  // Right: commands this actor issues
+  // Right: commands this actor issues + terminal consumers
   for (const command of issues) {
+    const commandNodeId = generateIdForNode(command);
+
     nodes.push(createNode({
-      id: generateIdForNode(command),
+      id: commandNodeId,
       type: command.collection,
       data: { mode, message: { ...command.data } },
       position: { x: 0, y: 0 },
@@ -83,10 +127,50 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
     edges.push(createEdge({
       id: generatedIdForEdge(actor, command),
       source: actorNodeId,
-      target: generateIdForNode(command),
+      target: commandNodeId,
       label: 'issues',
       data: { customColor: getColorFromString(command.data.id) },
     }));
+
+    // Right expansion: entity consumers of this command
+    const cmdEntityConsumers = getEntityConsumersOfMessage(entities, command);
+    for (const ec of cmdEntityConsumers) {
+      const ecId = generateIdForNode(ec);
+      nodes.push(createNode({
+        id: ecId,
+        type: 'entities',
+        data: { mode, entity: { ...ec.data } },
+        position: { x: 0, y: 0 },
+      }));
+
+      edges.push(createEdge({
+        id: generatedIdForEdge(command, ec),
+        source: commandNodeId,
+        target: ecId,
+        label: 'subscribes to',
+        data: { customColor: getColorFromString(command.data.id) },
+      }));
+    }
+
+    // Right expansion: service consumers of this command
+    const cmdServiceConsumers = getConsumersOfMessage(services, command);
+    for (const sc of cmdServiceConsumers) {
+      const scId = generateIdForNode(sc);
+      nodes.push(createNode({
+        id: scId,
+        type: 'services',
+        data: { mode, service: { ...sc.data } },
+        position: { x: 0, y: 0 },
+      }));
+
+      edges.push(createEdge({
+        id: generatedIdForEdge(command, sc),
+        source: commandNodeId,
+        target: scId,
+        label: getEdgeLabelForMessageAsSource(command),
+        data: { customColor: getColorFromString(command.data.id) },
+      }));
+    }
   }
 
   // Deduplicate
