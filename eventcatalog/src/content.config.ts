@@ -520,6 +520,7 @@ const domains = defineCollection({
       domains: z.array(pointer).optional(),
       entities: z.array(pointer).optional(),
       policies: z.array(pointer).optional(),
+      views: z.array(pointer).optional(),
       'data-products': z.array(pointer).optional(),
       flows: z.array(pointer).optional(),
       sends: z.array(sendsPointer).optional(),
@@ -531,6 +532,7 @@ const domains = defineCollection({
           services: detailPanelPropertySchema.optional(),
           entities: detailPanelPropertySchema.optional(),
           policies: detailPanelPropertySchema.optional(),
+          views: detailPanelPropertySchema.optional(),
           messages: detailPanelPropertySchema.optional(),
           ubiquitousLanguage: detailPanelPropertySchema.optional(),
           repository: detailPanelPropertySchema.optional(),
@@ -690,6 +692,67 @@ const policies = defineCollection({
     .merge(baseSchema),
 });
 
+const views = defineCollection({
+  loader: glob({
+    pattern: ['**/views/*/index.(md|mdx)', '**/views/*/versioned/*/index.(md|mdx)'],
+    base: projectDirBase,
+    generateId: ({ data }) => {
+      return `${data.id}-${data.version}`;
+    },
+  }),
+  schema: z
+    .object({
+      subscribes: z.array(pointer).optional(),
+      informs: z.array(pointer).optional(),
+      auth: z.enum(['anonymous', 'required']).optional(),
+      domain: z.string().optional(),
+      sources: z
+        .array(
+          z.object({
+            domain: z.string(),
+            data: z.array(z.string()),
+          })
+        )
+        .optional(),
+      domains: z.array(reference('domains')).optional(),
+      detailsPanel: z
+        .object({
+          domains: detailPanelPropertySchema.optional(),
+          messages: detailPanelPropertySchema.optional(),
+          versions: detailPanelPropertySchema.optional(),
+          owners: detailPanelPropertySchema.optional(),
+          changelog: detailPanelPropertySchema.optional(),
+          attachments: detailPanelPropertySchema.optional(),
+        })
+        .optional(),
+    })
+    .merge(baseSchema),
+});
+
+const actors = defineCollection({
+  loader: glob({
+    pattern: ['actors/*/index.(md|mdx)', 'actors/*/versioned/*/index.(md|mdx)'],
+    base: projectDirBase,
+    generateId: ({ data }) => {
+      return `${data.id}-${data.version}`;
+    },
+  }),
+  schema: z
+    .object({
+      reads: z.array(pointer).optional(),
+      issues: z.array(pointer).optional(),
+      detailsPanel: z
+        .object({
+          versions: detailPanelPropertySchema.optional(),
+          owners: detailPanelPropertySchema.optional(),
+          changelog: detailPanelPropertySchema.optional(),
+          attachments: detailPanelPropertySchema.optional(),
+        })
+        .optional(),
+    })
+    .merge(baseSchema),
+});
+
 const users = defineCollection({
   loader: glob({ pattern: 'users/*.(md|mdx)', base: projectDirBase, generateId: ({ data }) => data.id as string }),
   schema: z.object({
@@ -795,6 +858,8 @@ export const collections = {
   ubiquitousLanguages,
   entities,
   policies,
+  views,
+  actors,
 
   // EventCatalog Pro Collections
   customPages,

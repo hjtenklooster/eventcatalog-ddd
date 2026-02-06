@@ -14,6 +14,8 @@ export class Page extends HybridPage {
     const { getDataProducts } = await import('@utils/collections/data-products');
     const { getEntities } = await import('@utils/collections/entities');
     const { getPolicies } = await import('@utils/collections/policies');
+    const { getViews } = await import('@utils/collections/views');
+    const { getActors } = await import('@utils/collections/actors');
 
     const loaders = {
       ...pageDataLoader,
@@ -22,6 +24,8 @@ export class Page extends HybridPage {
       'data-products': getDataProducts,
       entities: getEntities,
       policies: getPolicies,
+      views: getViews,
+      actors: getActors,
     };
 
     const itemTypes = [
@@ -35,6 +39,8 @@ export class Page extends HybridPage {
       'data-products',
       'entities',
       'policies',
+      'views',
+      'actors',
     ] as const;
     const allItems = await Promise.all(itemTypes.map((type) => loaders[type]()));
 
@@ -61,6 +67,8 @@ export class Page extends HybridPage {
     const { getDataProducts } = await import('@utils/collections/data-products');
     const { getEntities } = await import('@utils/collections/entities');
     const { getPolicies } = await import('@utils/collections/policies');
+    const { getViews } = await import('@utils/collections/views');
+    const { getActors } = await import('@utils/collections/actors');
 
     const loaders = {
       ...pageDataLoader,
@@ -69,6 +77,8 @@ export class Page extends HybridPage {
       'data-products': getDataProducts,
       entities: getEntities,
       policies: getPolicies,
+      views: getViews,
+      actors: getActors,
     };
 
     type DiscoverPageTypes = keyof typeof loaders;

@@ -182,6 +182,8 @@ export const resourceToCollectionMap = {
   container: 'containers',
   entity: 'entities',
   policy: 'policies',
+  view: 'views',
+  actor: 'actors',
   diagram: 'diagrams',
   'data-product': 'data-products',
 } as const;
@@ -199,6 +201,8 @@ export const collectionToResourceMap = {
   containers: 'container',
   entities: 'entity',
   policies: 'policy',
+  views: 'view',
+  actors: 'actor',
   diagrams: 'diagram',
   'data-products': 'data-product',
 } as const;

@@ -1,0 +1,35 @@
+---
+id: CustomerSupportAgent
+name: Customer Support Agent
+version: 1.0.0
+summary: Support staff who handles customer inquiries about orders.
+owners:
+  - dboyne
+reads:
+  - id: OrderSummaryView
+    version: "1.0.0"
+issues:
+  - id: UpdateInventory
+    version: "0.0.4"
+---
+
+import Footer from '@catalog/components/footer.astro';
+
+## Role Description
+
+The Customer Support Agent is a human operator who handles customer inquiries about their orders. They use the Order Summary View to quickly look up order details and current status.
+
+## Responsibilities
+
+- Look up customer orders using the Order Summary View
+- Respond to order status inquiries
+- Escalate issues when order status is unexpected
+- Trigger manual inventory adjustments when needed
+
+## Decision Flow
+
+The agent reads the **Order Summary View** to see the current state of a customer's order, then decides how to respond or what action to take.
+
+<NodeGraph />
+
+<Footer />

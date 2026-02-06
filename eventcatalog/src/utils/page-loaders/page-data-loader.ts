@@ -7,6 +7,8 @@ import { getServices } from '@utils/collections/services';
 import { getFlows } from '@utils/collections/flows';
 import { getEntities } from '@utils/collections/entities';
 import { getPolicies } from '@utils/collections/policies';
+import { getViews } from '@utils/collections/views';
+import { getActors } from '@utils/collections/actors';
 import { getContainers } from '@utils/collections/containers';
 import { getDiagrams } from '@utils/collections/diagrams';
 import type { CollectionEntry } from 'astro:content';
@@ -20,10 +22,12 @@ export const pageDataLoader: Record<PageTypes, () => Promise<CollectionEntry<Col
   domains: getDomains,
   channels: getChannels,
   flows: getFlows,
-  // Entity/Policy return enriched types (sends/receives hydrated to full entries)
+  // Entity/Policy/View/Actor return enriched types (hydrated to full entries)
   // but are structurally compatible with CollectionEntry<CollectionTypes>[]
   entities: getEntities as () => Promise<CollectionEntry<CollectionTypes>[]>,
   policies: getPolicies as () => Promise<CollectionEntry<CollectionTypes>[]>,
+  views: getViews as () => Promise<CollectionEntry<CollectionTypes>[]>,
+  actors: getActors as () => Promise<CollectionEntry<CollectionTypes>[]>,
   containers: getContainers,
   diagrams: getDiagrams,
   'data-products': getDataProducts,
