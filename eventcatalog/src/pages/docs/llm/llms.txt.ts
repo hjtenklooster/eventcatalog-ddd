@@ -20,6 +20,7 @@ const channels = await getCollection('channels');
 const containers = await getCollection('containers');
 
 const entities = await getCollection('entities');
+const policies = await getCollection('policies');
 
 const customDocs = await getCollection('customPages');
 
@@ -79,6 +80,27 @@ const renderEntities = (baseUrl: string) => {
     .join('\n');
 };
 
+// render the policies from the domain list
+const renderPolicies = (baseUrl: string) => {
+  const domainsWithPolicies = domains.filter((domain) => domain.data.policies?.length && domain.data.policies.length > 0);
+
+  if (domainsWithPolicies.length === 0) {
+    return '';
+  }
+
+  return domainsWithPolicies
+    .map((domain) => {
+      const policiesList = domain.data.policies
+        ?.map((policy) => {
+          const policyItem = policies.find((p) => p.data.id === policy.id);
+          return `    - [${policyItem?.data.name}](${baseUrl}/docs/policies/${policyItem?.data.id}/${policyItem?.data.version}.mdx) - ${policyItem?.data.summary}`;
+        })
+        .join('\n');
+      return `- ${domain.data.name} Domain\n${policiesList || ''}`;
+    })
+    .join('\n');
+};
+
 export const GET: APIRoute = async ({ params, request }) => {
   const url = new URL(request.url);
   const baseUrl = process.env.LLMS_TXT_BASE_URL || `${url.origin}`;
@@ -120,6 +142,8 @@ export const GET: APIRoute = async ({ params, request }) => {
     containers.map((item) => formatVersionedItem(item, 'containers')).join('\n'),
     '\n## Entities',
     renderEntities(baseUrl),
+    '\n## Policies',
+    renderPolicies(baseUrl),
     '\n## Teams',
     teams.map((item) => formatSimpleItem(item, 'teams')).join('\n'),
     '\n## Users',

@@ -519,6 +519,7 @@ const domains = defineCollection({
       services: z.array(pointer).optional(),
       domains: z.array(pointer).optional(),
       entities: z.array(pointer).optional(),
+      policies: z.array(pointer).optional(),
       'data-products': z.array(pointer).optional(),
       flows: z.array(pointer).optional(),
       sends: z.array(sendsPointer).optional(),
@@ -529,6 +530,7 @@ const domains = defineCollection({
           subdomains: detailPanelPropertySchema.optional(),
           services: detailPanelPropertySchema.optional(),
           entities: detailPanelPropertySchema.optional(),
+          policies: detailPanelPropertySchema.optional(),
           messages: detailPanelPropertySchema.optional(),
           ubiquitousLanguage: detailPanelPropertySchema.optional(),
           repository: detailPanelPropertySchema.optional(),
@@ -660,6 +662,34 @@ const entities = defineCollection({
     .merge(baseSchema),
 });
 
+const policies = defineCollection({
+  loader: glob({
+    pattern: ['**/policies/*/index.(md|mdx)', '**/policies/*/versioned/*/index.(md|mdx)'],
+    base: projectDirBase,
+    generateId: ({ data }) => {
+      return `${data.id}-${data.version}`;
+    },
+  }),
+  schema: z
+    .object({
+      conditions: z.array(z.string()).optional(),
+      sends: z.array(sendsPointer).optional(),
+      receives: z.array(receivesPointer).optional(),
+      domains: z.array(reference('domains')).optional(),
+      detailsPanel: z
+        .object({
+          domains: detailPanelPropertySchema.optional(),
+          messages: detailPanelPropertySchema.optional(),
+          versions: detailPanelPropertySchema.optional(),
+          owners: detailPanelPropertySchema.optional(),
+          changelog: detailPanelPropertySchema.optional(),
+          attachments: detailPanelPropertySchema.optional(),
+        })
+        .optional(),
+    })
+    .merge(baseSchema),
+});
+
 const users = defineCollection({
   loader: glob({ pattern: 'users/*.(md|mdx)', base: projectDirBase, generateId: ({ data }) => data.id as string }),
   schema: z.object({
@@ -764,6 +794,7 @@ export const collections = {
   // DDD Collections
   ubiquitousLanguages,
   entities,
+  policies,
 
   // EventCatalog Pro Collections
   customPages,

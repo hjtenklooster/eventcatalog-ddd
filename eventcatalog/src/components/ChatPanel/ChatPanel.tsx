@@ -551,7 +551,7 @@ const ChatPanel = ({ isOpen, onClose }: ChatPanelProps) => {
   // Memoize page context to avoid recalculating on every render
   const pageContext = useMemo(() => {
     const match = pathname.match(
-      /^\/(docs|visualiser|architecture)\/(events|services|commands|queries|flows|domains|channels|entities|containers|data-products)\/([^/]+)(?:\/([^/]+))?/
+      /^\/(docs|visualiser|architecture)\/(events|services|commands|queries|flows|domains|channels|entities|containers|data-products|policies)\/([^/]+)(?:\/([^/]+))?/
     );
     if (match) {
       const [, , collection, id, version] = match;
@@ -566,6 +566,7 @@ const ChatPanel = ({ isOpen, onClose }: ChatPanelProps) => {
         entities: 'Entity',
         containers: 'Container',
         'data-products': 'Data Product',
+        policies: 'Policy',
       };
       return {
         type: collectionNames[collection] || collection,

@@ -37,6 +37,10 @@ vi.mock('@utils/collections/util', () => ({
     // Return latest (highest version) if no version specified
     return matches.length > 0 ? [matches[matches.length - 1]] : [];
   }),
+  satisfies: vi.fn((version: string, range: string) => {
+    // Simple mock: for exact version matching or 'latest'
+    return version === range || range === 'latest';
+  }),
 }));
 
 // Mock getUbiquitousLanguageWithSubdomains
@@ -247,7 +251,7 @@ describe('Pagination Utilities', () => {
 // ============================================
 
 describe('getResources', () => {
-  it.each(['events', 'services', 'commands', 'queries', 'flows', 'domains', 'channels', 'entities'] as const)(
+  it.each(['events', 'services', 'commands', 'queries', 'flows', 'domains', 'channels', 'entities', 'policies'] as const)(
     'returns paginated resources from %s collection',
     async (collection) => {
       const result = await getResources({ collection });
@@ -1033,6 +1037,160 @@ describe('Entity Support in Message Analysis', () => {
       expect('error' in result).toBe(false);
       if (!('error' in result)) {
         expect(result.consumers.some((c: ProducerConsumer) => c.id === 'InventoryItem')).toBe(true);
+      }
+    });
+  });
+});
+
+// ============================================
+// Policy Support Tests
+// These tests verify that policies are correctly
+// included in producer/consumer lookups alongside services and entities.
+// ============================================
+
+describe('Policy Support in Message Analysis', () => {
+  describe('getProducersOfMessage should include policies', () => {
+    it('finds policies that send (dispatch) a command', async () => {
+      // AutoConfirmOrder policy sends CreateOrder command
+      const result = await getProducersOfMessage({
+        messageId: 'CreateOrder',
+        messageVersion: '1.0.0',
+        messageCollection: 'commands',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.producers.some((p: ProducerConsumer) => p.id === 'AutoConfirmOrder')).toBe(true);
+      }
+    });
+
+    it('finds both services, entities, AND policies that produce a message', async () => {
+      // CreateOrder is produced by AutoConfirmOrder policy AND consumed by Order entity
+      const result = await getProducersOfMessage({
+        messageId: 'CreateOrder',
+        messageVersion: '1.0.0',
+        messageCollection: 'commands',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.producers.some((p: ProducerConsumer) => p.id === 'AutoConfirmOrder')).toBe(true);
+        expect(result.count).toBeGreaterThanOrEqual(1);
+      }
+    });
+  });
+
+  describe('getConsumersOfMessage should include policies', () => {
+    it('finds policies that receive (are triggered by) an event', async () => {
+      // AutoConfirmOrder policy receives PaymentProcessed event
+      const result = await getConsumersOfMessage({
+        messageId: 'PaymentProcessed',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.consumers.some((c: ProducerConsumer) => c.id === 'AutoConfirmOrder')).toBe(true);
+      }
+    });
+
+    it('finds policies that receive OrderCreated event', async () => {
+      // NotifyInventory policy receives OrderCreated event
+      const result = await getConsumersOfMessage({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.consumers.some((c: ProducerConsumer) => c.id === 'NotifyInventory')).toBe(true);
+      }
+    });
+  });
+
+  describe('analyzeChangeImpact should include policies', () => {
+    it('includes policies in impact analysis', async () => {
+      const result = await analyzeChangeImpact({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // NotifyInventory policy receives OrderCreated
+        expect(result.consumers.some((c: any) => c.id === 'NotifyInventory')).toBe(true);
+      }
+    });
+
+    it('includes policy owners in affected teams', async () => {
+      const result = await analyzeChangeImpact({
+        messageId: 'PaymentProcessed',
+        messageVersion: '1.0.0',
+        messageCollection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // AutoConfirmOrder policy is owned by 'order-team'
+        expect(result.impact.teamsAffected).toContain('order-team');
+      }
+    });
+
+    it('includes policies as producers in impact analysis', async () => {
+      const result = await analyzeChangeImpact({
+        messageId: 'CreateOrder',
+        messageVersion: '1.0.0',
+        messageCollection: 'commands',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        // AutoConfirmOrder policy sends CreateOrder
+        expect(result.producers.some((p: any) => p.id === 'AutoConfirmOrder')).toBe(true);
+      }
+    });
+  });
+
+  describe('findMessageBySchemaId should include policies', () => {
+    it('includes policies in producers list', async () => {
+      const result = await findMessageBySchemaId({
+        messageId: 'CreateOrder',
+        messageVersion: '1.0.0',
+        collection: 'commands',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.producers.some((p: ProducerConsumer) => p.id === 'AutoConfirmOrder')).toBe(true);
+      }
+    });
+
+    it('includes policies in consumers list', async () => {
+      const result = await findMessageBySchemaId({
+        messageId: 'OrderCreated',
+        messageVersion: '1.0.0',
+        collection: 'events',
+      });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.consumers.some((c: ProducerConsumer) => c.id === 'NotifyInventory')).toBe(true);
+      }
+    });
+  });
+
+  describe('findResourcesByOwner should include policies', () => {
+    it('finds policies owned by a team', async () => {
+      const result = await findResourcesByOwner({ ownerId: 'order-team' });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.resources.some((r: ResourceResult) => r.id === 'AutoConfirmOrder')).toBe(true);
+      }
+    });
+  });
+
+  describe('getResources should include policies collection', () => {
+    it('returns policies from the policies collection', async () => {
+      const result = await getResources({ collection: 'policies' });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.totalCount).toBe(2);
+        expect(result.resources.some((r: any) => r.id === 'AutoConfirmOrder')).toBe(true);
+        expect(result.resources.some((r: any) => r.id === 'NotifyInventory')).toBe(true);
       }
     });
   });

@@ -27,6 +27,7 @@ export const NODE_COLOR_CLASSES: Record<string, string> = {
   'data-products': 'bg-indigo-600',
   domains: 'bg-yellow-600',
   entities: 'bg-purple-600',
+  policies: 'bg-violet-600',
 };
 
 export const NODE_TYPE_LABELS: Record<string, string> = {
@@ -43,6 +44,7 @@ export const NODE_TYPE_LABELS: Record<string, string> = {
   'data-products': 'Data Product',
   domains: 'Domain',
   entities: 'Entity',
+  policies: 'Policy',
 };
 
 /**
@@ -70,7 +72,7 @@ export function getConnectedNodes(centerNodeId: string, nodes: Node[], edges: Ed
 }
 
 // Entity keys that follow the standard data structure pattern
-const ENTITY_KEYS = ['service', 'message', 'flow', 'channel', 'domain', 'entity', 'dataProduct'] as const;
+const ENTITY_KEYS = ['service', 'message', 'flow', 'channel', 'domain', 'entity', 'dataProduct', 'policy'] as const;
 
 /**
  * Extract display information from a ReactFlow node
@@ -126,6 +128,7 @@ const DOC_PATH_MAP: Record<string, string> = {
   domain: 'domains',
   entity: 'entities',
   dataProduct: 'data-products',
+  policy: 'policies',
 };
 
 /**

@@ -5,7 +5,7 @@
 import { getCollection, getEntry } from 'astro:content';
 import { z } from 'zod';
 import { getSchemasFromResource, getSchemaFormatFromURL } from '@utils/collections/schemas';
-import { getItemsFromCollectionByIdAndSemverOrLatest } from '@utils/collections/util';
+import { getItemsFromCollectionByIdAndSemverOrLatest, satisfies } from '@utils/collections/util';
 import { getUbiquitousLanguageWithSubdomains } from '@utils/collections/domains';
 import { getAbsoluteFilePathForAstroFile } from '@utils/files';
 import fs from 'node:fs';
@@ -19,6 +19,7 @@ import { getNodesAndEdges as getNodesAndEdgesForDomain } from '@utils/node-graph
 import { getNodesAndEdges as getNodesAndEdgesForFlows } from '@utils/node-graphs/flows-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForDataProduct } from '@utils/node-graphs/data-products-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForContainer } from '@utils/node-graphs/container-node-graph';
+import { getNodesAndEdges as getNodesAndEdgesForPolicy } from '@utils/node-graphs/policy-node-graph';
 import { convertToMermaid } from '@utils/node-graphs/export-mermaid';
 import config from '@config';
 
@@ -103,6 +104,7 @@ export const collectionSchema = z.enum([
   'domains',
   'channels',
   'entities',
+  'policies',
   'containers',
   'diagrams',
   'data-products',
@@ -119,6 +121,7 @@ export const resourceCollectionSchema = z.enum([
   'domains',
   'channels',
   'entities',
+  'policies',
   'data-products',
 ]);
 
@@ -131,6 +134,7 @@ export const visualiserCollectionSchema = z.enum([
   'flows',
   'containers',
   'data-products',
+  'policies',
 ]);
 
 // ============================================
@@ -243,6 +247,7 @@ export async function findResourcesByOwner(params: { ownerId: string }) {
     'flows',
     'channels',
     'entities',
+    'policies',
     'data-products',
   ] as const;
 
@@ -282,7 +287,7 @@ const createSendsFilter = (messageId: string, messageVersion?: string) => (resou
   return sends.some((send: any) => {
     const idMatch = send.id === messageId;
     if (!messageVersion || !send.version || send.version === 'latest') return idMatch;
-    return idMatch && send.version === messageVersion;
+    return idMatch && satisfies(messageVersion, send.version);
   });
 };
 
@@ -291,29 +296,30 @@ const createReceivesFilter = (messageId: string, messageVersion?: string) => (re
   return receives.some((receive: any) => {
     const idMatch = receive.id === messageId;
     if (!messageVersion || !receive.version || receive.version === 'latest') return idMatch;
-    return idMatch && receive.version === messageVersion;
+    return idMatch && satisfies(messageVersion, receive.version);
   });
 };
 
-const mapResourceBasic = (r: any, collection: 'services' | 'entities') => ({
+const mapResourceBasic = (r: any, collection: 'services' | 'entities' | 'policies') => ({
   id: (r.data as any).id,
   version: (r.data as any).version,
   name: (r.data as any).name || (r.data as any).id,
   collection,
 });
 
-const mapResourceWithOwners = (r: any, collection: 'services' | 'entities') => ({
+const mapResourceWithOwners = (r: any, collection: 'services' | 'entities' | 'policies') => ({
   ...mapResourceBasic(r, collection),
   owners: (r.data as any).owners || [],
 });
 
 /**
- * Get services and entities that produce (send) a specific message
+ * Get services, entities, and policies that produce (send) a specific message
  */
 export async function getProducersOfMessage(params: { messageId: string; messageVersion: string; messageCollection: string }) {
-  const [services, entities, message] = await Promise.all([
+  const [services, entities, policies, message] = await Promise.all([
     getCollection('services'),
     getCollection('entities'),
+    getCollection('policies'),
     getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`),
   ]);
 
@@ -326,10 +332,12 @@ export async function getProducersOfMessage(params: { messageId: string; message
   const filterBySends = createSendsFilter(params.messageId, params.messageVersion);
   const serviceProducers = services.filter(filterBySends);
   const entityProducers = entities.filter(filterBySends);
+  const policyProducers = policies.filter(filterBySends);
 
   const producers = [
     ...serviceProducers.map((s) => mapResourceBasic(s, 'services')),
     ...entityProducers.map((e) => mapResourceBasic(e, 'entities')),
+    ...policyProducers.map((p) => mapResourceBasic(p, 'policies')),
   ];
 
   return {
@@ -344,12 +352,13 @@ export async function getProducersOfMessage(params: { messageId: string; message
 }
 
 /**
- * Get services and entities that consume (receive) a specific message
+ * Get services, entities, and policies that consume (receive) a specific message
  */
 export async function getConsumersOfMessage(params: { messageId: string; messageVersion: string; messageCollection: string }) {
-  const [services, entities, message] = await Promise.all([
+  const [services, entities, policies, message] = await Promise.all([
     getCollection('services'),
     getCollection('entities'),
+    getCollection('policies'),
     getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`),
   ]);
 
@@ -362,10 +371,12 @@ export async function getConsumersOfMessage(params: { messageId: string; message
   const filterByReceives = createReceivesFilter(params.messageId, params.messageVersion);
   const serviceConsumers = services.filter(filterByReceives);
   const entityConsumers = entities.filter(filterByReceives);
+  const policyConsumers = policies.filter(filterByReceives);
 
   const consumers = [
     ...serviceConsumers.map((s) => mapResourceBasic(s, 'services')),
     ...entityConsumers.map((e) => mapResourceBasic(e, 'entities')),
+    ...policyConsumers.map((p) => mapResourceBasic(p, 'policies')),
   ];
 
   return {
@@ -381,12 +392,13 @@ export async function getConsumersOfMessage(params: { messageId: string; message
 
 /**
  * Analyze the impact of changing a message (event, command, query)
- * Returns all affected services and entities (producers and consumers) and their owners
+ * Returns all affected services, entities, and policies (producers and consumers) and their owners
  */
 export async function analyzeChangeImpact(params: { messageId: string; messageVersion: string; messageCollection: string }) {
-  const [services, entities, message] = await Promise.all([
+  const [services, entities, policies, message] = await Promise.all([
     getCollection('services'),
     getCollection('entities'),
+    getCollection('policies'),
     getEntry(params.messageCollection as any, `${params.messageId}-${params.messageVersion}`),
   ]);
 
@@ -399,21 +411,25 @@ export async function analyzeChangeImpact(params: { messageId: string; messageVe
   const filterBySends = createSendsFilter(params.messageId, params.messageVersion);
   const filterByReceives = createReceivesFilter(params.messageId, params.messageVersion);
 
-  // Find producers (services and entities)
+  // Find producers (services, entities, and policies)
   const serviceProducers = services.filter(filterBySends);
   const entityProducers = entities.filter(filterBySends);
+  const policyProducers = policies.filter(filterBySends);
 
-  // Find consumers (services and entities)
+  // Find consumers (services, entities, and policies)
   const serviceConsumers = services.filter(filterByReceives);
   const entityConsumers = entities.filter(filterByReceives);
+  const policyConsumers = policies.filter(filterByReceives);
 
   const allProducers = [
     ...serviceProducers.map((s) => ({ resource: s, collection: 'services' as const })),
     ...entityProducers.map((e) => ({ resource: e, collection: 'entities' as const })),
+    ...policyProducers.map((p) => ({ resource: p, collection: 'policies' as const })),
   ];
   const allConsumers = [
     ...serviceConsumers.map((s) => ({ resource: s, collection: 'services' as const })),
     ...entityConsumers.map((e) => ({ resource: e, collection: 'entities' as const })),
+    ...policyConsumers.map((p) => ({ resource: p, collection: 'policies' as const })),
   ];
 
   // Collect all affected teams/owners
@@ -615,8 +631,12 @@ export async function findMessageBySchemaId(params: {
     const matches = getItemsFromCollectionByIdAndSemverOrLatest(collection, params.messageId, params.messageVersion);
     const resource = matches[0];
     if (resource) {
-      // Get producers and consumers (services and entities)
-      const [services, entities] = await Promise.all([getCollection('services'), getCollection('entities')]);
+      // Get producers and consumers (services, entities, and policies)
+      const [services, entities, policies] = await Promise.all([
+        getCollection('services'),
+        getCollection('entities'),
+        getCollection('policies'),
+      ]);
 
       const resourceVersion = (resource.data as any).version;
       const filterBySends = createSendsFilter(params.messageId, resourceVersion);
@@ -624,8 +644,10 @@ export async function findMessageBySchemaId(params: {
 
       const serviceProducers = services.filter(filterBySends);
       const entityProducers = entities.filter(filterBySends);
+      const policyProducers = policies.filter(filterBySends);
       const serviceConsumers = services.filter(filterByReceives);
       const entityConsumers = entities.filter(filterByReceives);
+      const policyConsumers = policies.filter(filterByReceives);
 
       return {
         resource: {
@@ -639,10 +661,12 @@ export async function findMessageBySchemaId(params: {
         producers: [
           ...serviceProducers.map((s) => mapResourceBasic(s, 'services')),
           ...entityProducers.map((e) => mapResourceBasic(e, 'entities')),
+          ...policyProducers.map((p) => mapResourceBasic(p, 'policies')),
         ],
         consumers: [
           ...serviceConsumers.map((s) => mapResourceBasic(s, 'services')),
           ...entityConsumers.map((e) => mapResourceBasic(e, 'entities')),
+          ...policyConsumers.map((p) => mapResourceBasic(p, 'policies')),
         ],
       };
     }
@@ -892,6 +916,7 @@ const getNodesAndEdgesFunctions = {
   flows: getNodesAndEdgesForFlows,
   containers: getNodesAndEdgesForContainer,
   'data-products': getNodesAndEdgesForDataProduct,
+  policies: getNodesAndEdgesForPolicy,
 };
 
 /**
@@ -956,7 +981,7 @@ export async function getArchitectureDiagramAsMermaid(params: {
 
 export const toolDescriptions = {
   getResources:
-    'Use this tool to get events, services, commands, queries, flows, domains, channels, entities from EventCatalog. Supports pagination via cursor and filtering by search term (searches name, id, and summary).',
+    'Use this tool to get events, services, commands, queries, flows, domains, channels, entities, policies from EventCatalog. Supports pagination via cursor and filtering by search term (searches name, id, and summary).',
   getResource: 'Use this tool to get a specific resource from EventCatalog by its id and version',
   getMessagesProducedOrConsumedByResource:
     'Use this tool to get the messages produced or consumed by a resource by its id and version. Look at the `sends` and `receives` properties to get the messages produced or consumed by the resource',
@@ -964,11 +989,11 @@ export const toolDescriptions = {
     'Use this tool to get the schema or specifications (openapi or asyncapi or graphql) for a resource by its id and version',
   findResourcesByOwner: 'Use this tool to find all resources (services, events, commands, etc.) owned by a specific team or user',
   getProducersOfMessage:
-    'Use this tool to find which services and entities produce (send) a specific message (event, command, or query)',
+    'Use this tool to find which services, entities, and policies produce (send) a specific message (event, command, or query)',
   getConsumersOfMessage:
-    'Use this tool to find which services and entities consume (receive) a specific message (event, command, or query)',
+    'Use this tool to find which services, entities, and policies consume (receive) a specific message (event, command, or query)',
   analyzeChangeImpact:
-    'Use this tool to analyze the impact of changing a message. Returns all affected services and entities (producers and consumers), the teams that own them, and the blast radius of the change',
+    'Use this tool to analyze the impact of changing a message. Returns all affected services, entities, and policies (producers and consumers), the teams that own them, and the blast radius of the change',
   explainBusinessFlow:
     'Use this tool to get detailed information about a business flow (state machine). Returns the flow definition, steps, mermaid diagram if available, and related services',
   getTeams:

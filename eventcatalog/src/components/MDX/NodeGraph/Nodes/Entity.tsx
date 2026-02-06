@@ -53,7 +53,7 @@ export default function EntityNode({ data, sourcePosition, targetPosition }: any
   const { mode, entity, externalToDomain, domainName } = data as Data;
   const { id, name, version, properties = [], aggregateRoot, styles } = entity;
 
-  const { node: { color = 'blue', label } = {}, icon = 'CubeIcon' } = styles || {};
+  const { node: { color = 'yellow', label } = {}, icon = 'CubeIcon' } = styles || {};
 
   const Icon = getIcon(icon);
 
@@ -64,14 +64,14 @@ export default function EntityNode({ data, sourcePosition, targetPosition }: any
       <ContextMenu.Trigger>
         <div
           className={classNames(
-            'bg-white border border-blue-300 rounded-lg shadow-sm min-w-[200px]',
+            'bg-white border border-yellow-300 rounded-lg shadow-sm min-w-[200px]',
             externalToDomain ? 'border-yellow-400' : ''
           )}
         >
           {/* Table Header */}
           <div
             className={classNames(
-              'bg-blue-100 px-4 py-2 rounded-t-lg border-b border-gray-300',
+              'bg-yellow-100 px-4 py-2 rounded-t-lg border-b border-gray-300',
               externalToDomain ? 'bg-yellow-400' : ''
             )}
           >
@@ -104,7 +104,7 @@ export default function EntityNode({ data, sourcePosition, targetPosition }: any
                       type="target"
                       position={Position.Left}
                       id={`${property.name}-target`}
-                      className="!w-3 !h-3 !bg-white !border-2 !border-gray-400 !rounded-full !left-[-0px]"
+                      className="!w-3 !h-3 !bg-white !border-2 !border-yellow-400 !rounded-full !left-[-0px]"
                       style={{ left: '-6px' }}
                     />
 
@@ -113,7 +113,7 @@ export default function EntityNode({ data, sourcePosition, targetPosition }: any
                       type="source"
                       position={Position.Right}
                       id={`${property.name}-source`}
-                      className="!w-3 !h-3 !bg-white !border-2 !border-gray-400 !rounded-full !right-[-0px]"
+                      className="!w-3 !h-3 !bg-white !border-2 !border-yellow-400 !rounded-full !right-[-0px]"
                       style={{ right: '-6px' }}
                     />
 

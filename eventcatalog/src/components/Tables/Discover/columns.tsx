@@ -10,6 +10,7 @@ import {
   DocumentTextIcon,
   MapIcon,
   CubeIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/solid';
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
 import { DatabaseIcon, BoxIcon } from 'lucide-react';
@@ -661,6 +662,64 @@ export const getEntityColumns = (tableConfiguration: TableConfiguration) => [
 ];
 
 // ============================================================================
+// POLICY COLUMNS
+// ============================================================================
+export const getPolicyColumns = (tableConfiguration: TableConfiguration) => [
+  columnHelper.accessor('data.name', {
+    id: 'name',
+    header: () => <span>{tableConfiguration?.columns?.name?.label || 'Policy'}</span>,
+    cell: (info) => {
+      const item = info.row.original;
+      const isLatestVersion = item.data.version === item.data.latestVersion;
+      return (
+        <a
+          href={buildUrl(`/docs/${item.collection}/${item.data.id}/${item.data.version}`)}
+          className="group inline-flex items-center gap-2 hover:text-[rgb(var(--ec-accent))] transition-colors"
+        >
+          <Cog6ToothIcon className="h-4 w-4 text-[rgb(var(--ec-badge-policy-text))] flex-shrink-0" />
+          <span className="text-sm font-semibold text-[rgb(var(--ec-page-text))] group-hover:text-[rgb(var(--ec-accent))]">
+            {item.data.name}
+          </span>
+          {!isLatestVersion && <span className="text-xs text-[rgb(var(--ec-icon-color))]">v{item.data.version}</span>}
+        </a>
+      );
+    },
+    meta: {
+      filterVariant: 'name',
+    },
+  }),
+  createSummaryColumn(tableConfiguration),
+  columnHelper.accessor('data.receives', {
+    id: 'receives',
+    header: () => (
+      <span className="flex items-center gap-1">
+        <ArrowDownIcon className="w-3.5 h-3.5" />
+        Triggered By
+      </span>
+    ),
+    cell: (info) => <CollectionListCell items={info.getValue()} />,
+    meta: {
+      showFilter: false,
+    },
+  }),
+  columnHelper.accessor('data.sends', {
+    id: 'sends',
+    header: () => (
+      <span className="flex items-center gap-1">
+        <ArrowUpIcon className="w-3.5 h-3.5" />
+        Dispatches
+      </span>
+    ),
+    cell: (info) => <CollectionListCell items={info.getValue()} />,
+    meta: {
+      showFilter: false,
+    },
+  }),
+  createBadgesColumn(tableConfiguration),
+  createActionsColumn('policies', tableConfiguration),
+];
+
+// ============================================================================
 // COLUMN GETTER BY COLLECTION TYPE
 // ============================================================================
 export const getDiscoverColumns = (collectionType: CollectionType, tableConfiguration: TableConfiguration) => {
@@ -683,6 +742,8 @@ export const getDiscoverColumns = (collectionType: CollectionType, tableConfigur
       return getDataProductColumns(tableConfiguration);
     case 'entities':
       return getEntityColumns(tableConfiguration);
+    case 'policies':
+      return getPolicyColumns(tableConfiguration);
     default:
       return [];
   }

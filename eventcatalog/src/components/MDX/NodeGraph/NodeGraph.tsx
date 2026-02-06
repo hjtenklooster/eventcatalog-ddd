@@ -28,6 +28,7 @@ import ServiceNode from './Nodes/Service';
 import FlowNode from './Nodes/Flow';
 import EventNode from './Nodes/Event';
 import EntityNode from './Nodes/Entity';
+import PolicyNode from './Nodes/Policy';
 import QueryNode from './Nodes/Query';
 import UserNode from './Nodes/User';
 import StepNode from './Nodes/Step';
@@ -135,6 +136,8 @@ const NodeGraphBuilder = ({
         'external-system': ExternalSystemNode2,
         entity: EntityNode,
         entities: EntityNode,
+        policy: PolicyNode,
+        policies: PolicyNode,
         data: DataNode,
         view: ViewNode,
         actor: ActorNode,
@@ -589,6 +592,7 @@ const NodeGraphBuilder = ({
       step: 'bg-gray-700',
       data: 'bg-blue-600',
       'data-products': 'bg-indigo-600',
+      policies: 'bg-violet-600',
     };
 
     let legendForDomains: { [key: string]: { count: number; colorClass: string; groupId: string } } = {};

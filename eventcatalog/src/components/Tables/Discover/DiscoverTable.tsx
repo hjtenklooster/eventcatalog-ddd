@@ -27,7 +27,8 @@ export type CollectionType =
   | 'flows'
   | 'containers'
   | 'data-products'
-  | 'entities';
+  | 'entities'
+  | 'policies';
 
 export interface DiscoverTableData {
   collection: string;

@@ -3,6 +3,7 @@ import type { CollectionEntry } from 'astro:content';
 import path from 'path';
 import { createVersionedMap } from './util';
 import { hydrateProducersAndConsumers } from './messages';
+import { getPoliciesDispatchingCommand } from './policies';
 import utils from '@eventcatalog/sdk';
 
 const PROJECT_DIR = process.env.PROJECT_DIR || process.cwd();
@@ -36,12 +37,13 @@ export const getCommands = async ({ getAllVersions = true, hydrateServices = tru
   }
 
   // 1. Fetch collections in parallel
-  const [allCommands, allServices, allChannels, allDataProducts, allEntities] = await Promise.all([
+  const [allCommands, allServices, allChannels, allDataProducts, allEntities, allPolicies] = await Promise.all([
     getCollection('commands'),
     getCollection('services'),
     getCollection('channels'),
     getCollection('data-products'),
     getCollection('entities'),
+    getCollection('policies'),
   ]);
 
   // 2. Build optimized maps
@@ -73,6 +75,9 @@ export const getCommands = async ({ getAllVersions = true, hydrateServices = tru
         hydrate: hydrateServices,
       });
 
+      // Find policies that dispatch this command
+      const policiesDispatchingCommand = getPoliciesDispatchingCommand(allPolicies, command);
+
       // Find Channels
       const messageChannels = command.data.channels || [];
       const channelsForCommand = allChannels.filter((c) => messageChannels.some((channel) => c.data.id === channel.id));
@@ -91,6 +96,7 @@ export const getCommands = async ({ getAllVersions = true, hydrateServices = tru
           messageChannels: channelsForCommand,
           producers: producers as any, // Cast for hydration flexibility
           consumers: consumers as any,
+          dispatchingPolicies: policiesDispatchingCommand as any,
           versions,
           latestVersion,
         },

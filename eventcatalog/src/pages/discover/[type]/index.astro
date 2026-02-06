@@ -1,5 +1,12 @@
 ---
-import { QueueListIcon, RectangleGroupIcon, BoltIcon, ChatBubbleLeftIcon, CubeIcon } from '@heroicons/react/24/outline';
+import {
+  QueueListIcon,
+  RectangleGroupIcon,
+  BoltIcon,
+  ChatBubbleLeftIcon,
+  CubeIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
 import ServerIcon from '@heroicons/react/24/outline/ServerIcon';
 import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
 import { DatabaseIcon, BoxIcon } from 'lucide-react';
@@ -12,6 +19,7 @@ import { getQueries } from '@utils/collections/queries';
 import { getContainers } from '@utils/collections/containers';
 import { getDataProducts } from '@utils/collections/data-products';
 import { getEntities } from '@utils/collections/entities';
+import { getPolicies } from '@utils/collections/policies';
 import { getUsers } from '@utils/collections/users';
 import { getTeams } from '@utils/collections/teams';
 import { getChannels } from '@utils/collections/channels';
@@ -36,6 +44,7 @@ const flows = await getFlows();
 const containers = await getContainers();
 const dataProducts = await getDataProducts();
 const entities = await getEntities();
+const policies = await getPolicies();
 const channels = await getChannels();
 const users = await getUsers();
 const teams = await getTeams();
@@ -131,6 +140,13 @@ const typeConfig: Record<
       { id: 'isDeprecated', label: 'Is Deprecated' },
     ],
   },
+  policies: {
+    label: 'Policies',
+    propertyOptions: [
+      { id: 'hasOwners', label: 'Has Owners' },
+      { id: 'isDeprecated', label: 'Is Deprecated' },
+    ],
+  },
 };
 
 const currentTypeConfig = typeConfig[type] || typeConfig.events;
@@ -220,6 +236,15 @@ const tabs = [
     enabled: entities.length > 0,
     visible: entities.length > 0,
   },
+  {
+    label: `Policies (${policies.length})`,
+    href: buildUrl('/discover/policies'),
+    isActive: type === 'policies',
+    icon: Cog6ToothIcon,
+    activeColor: 'purple',
+    enabled: policies.length > 0,
+    visible: policies.length > 0,
+  },
 ];
 
 // Map data to match the expected structure for the table
@@ -273,6 +298,7 @@ const allCollections = [
   ...queries.map((q) => ({ ...q, collection: 'queries' })),
   ...dataProducts.map((dp) => ({ ...dp, collection: 'data-products' })),
   ...entities.map((e) => ({ ...e, collection: 'entities' })),
+  ...policies.map((p) => ({ ...p, collection: 'policies' })),
 ];
 
 // Create a map for quick lookup by collection:id (composite key to avoid collisions)
@@ -282,7 +308,17 @@ const collectionItemMap = new Map(allCollections.map((item) => [`${item.collecti
 function resolvePointer(pointer: { id: string; version?: string }) {
   if (!pointer?.id) return null;
   // Try each collection type to find the item (since pointers don't specify collection)
-  const collectionTypes = ['services', 'containers', 'channels', 'events', 'commands', 'queries', 'data-products', 'entities'];
+  const collectionTypes = [
+    'services',
+    'containers',
+    'channels',
+    'events',
+    'commands',
+    'queries',
+    'data-products',
+    'entities',
+    'policies',
+  ];
   let item = null;
   for (const collectionType of collectionTypes) {
     item = collectionItemMap.get(`${collectionType}:${pointer.id}`);

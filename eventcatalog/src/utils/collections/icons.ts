@@ -11,6 +11,7 @@ import {
   VariableIcon,
   MapIcon,
   CubeIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { BookText, Box, DatabaseIcon } from 'lucide-react';
 
@@ -42,6 +43,8 @@ export const getIconForCollection = (collection: string) => {
       return MapIcon;
     case 'entities':
       return Box;
+    case 'policies':
+      return Cog6ToothIcon;
     case 'containers':
       return DatabaseIcon;
     case 'data-products':
@@ -72,7 +75,9 @@ export const getColorAndIconForCollection = (collection: string) => {
     case 'ubiquitousLanguages':
       return { color: 'green', Icon: icon };
     case 'entities':
-      return { color: 'purple', Icon: icon };
+      return { color: 'yellow', Icon: icon };
+    case 'policies':
+      return { color: 'violet', Icon: icon };
     case 'domains':
       return { color: 'yellow', Icon: icon };
     case 'services':

@@ -81,8 +81,8 @@
   --ec-code-bg: 250 250 250; /* #fafafa */
 
   /* Badge colors - forest theme */
-  --ec-badge-domain-bg: 254 249 195; /* yellow-100 */
-  --ec-badge-domain-text: 161 98 7; /* yellow-700 */
+  --ec-badge-domain-bg: 207 250 254; /* cyan-100 */
+  --ec-badge-domain-text: 14 116 144; /* cyan-700 */
   --ec-badge-service-bg: 252 231 243; /* pink-100 */
   --ec-badge-service-text: 190 24 93; /* pink-700 */
   --ec-badge-event-bg: 254 243 199; /* amber-100 */
@@ -99,6 +99,10 @@
   --ec-badge-channel-text: 67 56 202; /* indigo-700 */
   --ec-badge-data-product-bg: 219 234 254; /* blue-100 */
   --ec-badge-data-product-text: 30 64 175; /* blue-800 */
+  --ec-badge-entity-bg: 254 249 195; /* yellow-100 */
+  --ec-badge-entity-text: 161 98 7; /* yellow-700 */
+  --ec-badge-policy-bg: 237 233 254; /* violet-100 */
+  --ec-badge-policy-text: 109 40 217; /* violet-700 */
   --ec-badge-default-bg: 240 253 244; /* green-50 */
   --ec-badge-default-text: 75 85 99; /* gray-600 */
 }
@@ -174,8 +178,8 @@
   --ec-code-bg: 17 24 39; /* #111827 */
 
   /* Badge colors - forest dark */
-  --ec-badge-domain-bg: 113 63 18 / 0.3; /* yellow-900/30 */
-  --ec-badge-domain-text: 253 224 71; /* yellow-300 */
+  --ec-badge-domain-bg: 22 78 99 / 0.3; /* cyan-900/30 */
+  --ec-badge-domain-text: 103 232 249; /* cyan-300 */
   --ec-badge-service-bg: 131 24 67 / 0.3; /* pink-900/30 */
   --ec-badge-service-text: 249 168 212; /* pink-300 */
   --ec-badge-event-bg: 120 53 15 / 0.3; /* amber-900/30 */
@@ -192,6 +196,10 @@
   --ec-badge-channel-text: 165 180 252; /* indigo-300 */
   --ec-badge-data-product-bg: 30 64 175 / 0.3; /* blue-800/30 */
   --ec-badge-data-product-text: 147 197 253; /* blue-300 */
+  --ec-badge-entity-bg: 113 63 18 / 0.3; /* yellow-900/30 */
+  --ec-badge-entity-text: 253 224 71; /* yellow-300 */
+  --ec-badge-policy-bg: 76 29 149 / 0.3; /* violet-900/30 */
+  --ec-badge-policy-text: 196 181 253; /* violet-300 */
   --ec-badge-default-bg: 55 65 81 / 0.3; /* gray-700/30 */
   --ec-badge-default-text: 209 213 219; /* gray-300 */
 }

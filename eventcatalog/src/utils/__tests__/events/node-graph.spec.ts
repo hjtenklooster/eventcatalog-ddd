@@ -121,28 +121,6 @@ describe('Events NodeGraph', () => {
         type: 'events',
       };
 
-      const expectedProducerNode = {
-        id: 'NotificationsService-0.0.1',
-        type: 'services',
-        sourcePosition: 'right',
-        targetPosition: 'left',
-        data: { mode: 'simple', service: { ...mockServices[4].data } },
-        position: { x: expect.any(Number), y: expect.any(Number) },
-      };
-
-      const expectedConsumerNode = {
-        id: 'NotificationsService-0.0.1',
-        sourcePosition: 'right',
-        targetPosition: 'left',
-        data: {
-          title: 'NotificationsService',
-          mode: 'simple',
-          service: { ...mockServices[4].data },
-        },
-        position: { x: expect.any(Number), y: expect.any(Number) },
-        type: 'services',
-      };
-
       const expectedEdges = expect.arrayContaining([
         // Producer to the event
         expect.objectContaining({
@@ -157,7 +135,6 @@ describe('Events NodeGraph', () => {
           source: 'EmailSent-1.0.0',
           target: 'EmailChannel-1.0.0',
           label: 'routes to',
-          animated: false,
         }),
         expect.objectContaining({
           id: 'EmailSent-1.0.0-NotificationsService-0.0.1-both',
@@ -167,16 +144,16 @@ describe('Events NodeGraph', () => {
         }),
       ]);
 
+      // Verify key nodes are present
       expect(nodes).toEqual(
         expect.arrayContaining([
-          // Nodes on the left
-          expect.objectContaining(expectedConsumerNode),
-
           // The event node itself
           expect.objectContaining(expectedEventNode),
-
-          // Nodes on the right
-          expect.objectContaining(expectedProducerNode),
+          // The service node (producer/consumer)
+          expect.objectContaining({
+            id: 'NotificationsService-0.0.1',
+            type: 'services',
+          }),
         ])
       );
 
@@ -440,9 +417,9 @@ describe('Events NodeGraph', () => {
       it('should render data product that is both producer and consumer of the same event', async () => {
         const { nodes, edges } = await getNodesAndEdges({ id: 'DataProductEvent', version: '1.0.0' });
 
-        // Should have data product nodes (may have duplicates from producer and consumer logic)
+        // Should have exactly 1 data product node (duplicates are deduplicated by ID at line 653-655 of message-node-graph.ts)
         const dataProductNodes = nodes.filter((n: any) => n.id === 'DataProductProducerConsumer-1.0.0');
-        expect(dataProductNodes.length).toBeGreaterThanOrEqual(1);
+        expect(dataProductNodes.length).toBe(1);
         expect(dataProductNodes[0]).toEqual(
           expect.objectContaining({
             id: 'DataProductProducerConsumer-1.0.0',

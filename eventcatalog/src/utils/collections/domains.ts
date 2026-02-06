@@ -80,18 +80,29 @@ export const getDomains = async ({
   }
 
   // 1. Fetch collections (always fetch messages to hydrate domain-level sends/receives)
-  const [allDomains, allServices, allEntities, allFlows, allEvents, allCommands, allQueries, allContainers, allDataProducts] =
-    await Promise.all([
-      getCollection('domains'),
-      getCollection('services'),
-      getCollection('entities'),
-      getCollection('flows'),
-      getCollection('events'),
-      getCollection('commands'),
-      getCollection('queries'),
-      getCollection('containers'),
-      getCollection('data-products'),
-    ]);
+  const [
+    allDomains,
+    allServices,
+    allEntities,
+    allPolicies,
+    allFlows,
+    allEvents,
+    allCommands,
+    allQueries,
+    allContainers,
+    allDataProducts,
+  ] = await Promise.all([
+    getCollection('domains'),
+    getCollection('services'),
+    getCollection('entities'),
+    getCollection('policies'),
+    getCollection('flows'),
+    getCollection('events'),
+    getCollection('commands'),
+    getCollection('queries'),
+    getCollection('containers'),
+    getCollection('data-products'),
+  ]);
 
   const allMessages = [...allEvents, ...allCommands, ...allQueries];
   const messageMap = createVersionedMap(allMessages);
@@ -101,6 +112,7 @@ export const getDomains = async ({
   const domainMap = createVersionedMap(allDomains);
   const serviceMap = createVersionedMap(allServices);
   const entityMap = createVersionedMap(allEntities);
+  const policyMap = createVersionedMap(allPolicies);
   const flowMap = createVersionedMap(allFlows);
   const dataProductMap = createVersionedMap(allDataProducts);
 
@@ -145,12 +157,18 @@ export const getDomains = async ({
             .map((dp: { id: string; version: string | undefined }) => findInMap(dataProductMap, dp.id, dp.version))
             .filter((dp: any) => !!dp);
 
+          // Hydrate policies for the subdomain
+          const subdomainPolicies = (subDomain.data.policies || [])
+            .map((p: { id: string; version: string | undefined }) => findInMap(policyMap, p.id, p.version))
+            .filter((p: any) => !!p);
+
           return {
             ...subDomain,
             data: {
               ...subDomain.data,
               services: hydratedServices as any,
               'data-products': subdomainDataProducts as any,
+              policies: subdomainPolicies as any,
             },
           };
         });
@@ -160,6 +178,12 @@ export const getDomains = async ({
       const entities = entitiesInDomain
         .map((entity: { id: string; version: string | undefined }) => findInMap(entityMap, entity.id, entity.version))
         .filter((e): e is CollectionEntry<'entities'> => !!e);
+
+      // Resolve Policies
+      const policiesInDomain = domain.data.policies || [];
+      const policies = policiesInDomain
+        .map((policy: { id: string; version: string | undefined }) => findInMap(policyMap, policy.id, policy.version))
+        .filter((p): p is CollectionEntry<'policies'> => !!p);
 
       // Resolve Flows
       const flowsInDomain = domain.data.flows || [];
@@ -219,6 +243,7 @@ export const getDomains = async ({
           services: services as any, // Cast to avoid deep type issues with enriched data
           domains: subDomains as any,
           entities: entities as any,
+          policies: policies as any,
           flows: flows as any,
           'data-products': dataProducts as any,
           sends: domainSends as any,

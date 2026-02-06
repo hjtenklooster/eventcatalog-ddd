@@ -13,6 +13,7 @@ export class Page extends HybridPage {
     const { getServices } = await import('@utils/collections/services');
     const { getDataProducts } = await import('@utils/collections/data-products');
     const { getEntities } = await import('@utils/collections/entities');
+    const { getPolicies } = await import('@utils/collections/policies');
 
     const loaders = {
       ...pageDataLoader,
@@ -20,6 +21,7 @@ export class Page extends HybridPage {
       services: getServices,
       'data-products': getDataProducts,
       entities: getEntities,
+      policies: getPolicies,
     };
 
     const itemTypes = [
@@ -32,6 +34,7 @@ export class Page extends HybridPage {
       'containers',
       'data-products',
       'entities',
+      'policies',
     ] as const;
     const allItems = await Promise.all(itemTypes.map((type) => loaders[type]()));
 
@@ -57,6 +60,7 @@ export class Page extends HybridPage {
     const { getServices } = await import('@utils/collections/services');
     const { getDataProducts } = await import('@utils/collections/data-products');
     const { getEntities } = await import('@utils/collections/entities');
+    const { getPolicies } = await import('@utils/collections/policies');
 
     const loaders = {
       ...pageDataLoader,
@@ -64,6 +68,7 @@ export class Page extends HybridPage {
       services: getServices,
       'data-products': getDataProducts,
       entities: getEntities,
+      policies: getPolicies,
     };
 
     type DiscoverPageTypes = keyof typeof loaders;

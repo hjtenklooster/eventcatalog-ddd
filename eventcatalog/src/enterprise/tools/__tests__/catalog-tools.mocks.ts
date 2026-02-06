@@ -379,6 +379,47 @@ export const mockEntities = [
 ];
 
 // ============================================
+// Mock Policies
+// ============================================
+export const mockPolicies = [
+  {
+    id: 'AutoConfirmOrder-1.0.0',
+    slug: 'policies/AutoConfirmOrder',
+    collection: 'policies',
+    body: 'Auto confirm order policy description',
+    data: {
+      id: 'AutoConfirmOrder',
+      name: 'Auto Confirm Order',
+      version: '1.0.0',
+      summary: 'Automatically confirms orders when payment is completed',
+      owners: ['order-team'],
+      // Policy receives PaymentProcessed event (triggered by)
+      receives: [{ id: 'PaymentProcessed', version: '1.0.0' }],
+      // Policy sends CreateOrder command (dispatches)
+      sends: [{ id: 'CreateOrder', version: '1.0.0' }],
+      conditions: ["Order.status = 'pending'", 'Payment.amount >= Order.total'],
+    },
+  },
+  {
+    id: 'NotifyInventory-1.0.0',
+    slug: 'policies/NotifyInventory',
+    collection: 'policies',
+    body: 'Notify inventory policy description',
+    data: {
+      id: 'NotifyInventory',
+      name: 'Notify Inventory',
+      version: '1.0.0',
+      summary: 'Notifies inventory when an order is created',
+      owners: ['inventory-team'],
+      // Policy receives OrderCreated event
+      receives: [{ id: 'OrderCreated', version: '1.0.0' }],
+      // Policy sends no commands (just reacts)
+      sends: [],
+    },
+  },
+];
+
+// ============================================
 // Mock Teams
 // ============================================
 export const mockTeams = [
@@ -520,6 +561,7 @@ export const mockCollections: Record<string, any[]> = {
   domains: mockDomains,
   channels: mockChannels,
   entities: mockEntities,
+  policies: mockPolicies,
   containers: mockContainers,
   diagrams: mockDiagrams,
   teams: mockTeams,

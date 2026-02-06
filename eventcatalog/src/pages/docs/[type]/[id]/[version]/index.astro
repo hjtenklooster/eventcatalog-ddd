@@ -28,7 +28,7 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline';
 import { ArrowsRightLeftIcon } from '@heroicons/react/20/solid';
-import { Box, Boxes, SquarePenIcon, DatabaseIcon, DatabaseZapIcon, ShieldCheckIcon, AlignLeft, Package } from 'lucide-react';
+import { Box, Boxes, SquarePenIcon, DatabaseIcon, DatabaseZapIcon, ShieldCheckIcon, AlignLeft, Package, Cog } from 'lucide-react';
 
 import { getSpecificationsForService } from '@utils/collections/services';
 import { resourceToCollectionMap, collectionToResourceMap, getDeprecatedDetails } from '@utils/collections/util';
@@ -158,6 +158,10 @@ const getBadge = () => {
       });
     }
     return entityBadges;
+  }
+
+  if (props.collection === 'policies') {
+    return [{ backgroundColor: 'purple', textColor: 'purple', content: 'Policy', icon: Cog, class: 'text-gray' }];
   }
 
   if (props.collection === 'data-products') {
