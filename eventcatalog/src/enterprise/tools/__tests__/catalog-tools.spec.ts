@@ -251,7 +251,7 @@ describe('Pagination Utilities', () => {
 // ============================================
 
 describe('getResources', () => {
-  it.each(['events', 'services', 'commands', 'queries', 'flows', 'domains', 'channels', 'entities', 'policies'] as const)(
+  it.each(['events', 'services', 'commands', 'queries', 'flows', 'domains', 'channels', 'entities', 'policies', 'views', 'actors'] as const)(
     'returns paginated resources from %s collection',
     async (collection) => {
       const result = await getResources({ collection });
@@ -1346,5 +1346,58 @@ describe('explainUbiquitousLanguageTerms', () => {
     if (!('error' in result)) {
       expect(result.subdomainCount).toBe(1);
     }
+  });
+});
+
+// ============================================
+// View and Actor Support Tests
+// These tests verify that views and actors are correctly
+// included in resource lookups. Views/actors do NOT use
+// sends/receives, so they are NOT in producer/consumer lookups.
+// ============================================
+
+describe('View and Actor Support', () => {
+  describe('findResourcesByOwner should include views', () => {
+    it('finds views owned by a team', async () => {
+      const result = await findResourcesByOwner({ ownerId: 'order-team' });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.resources.some((r: ResourceResult) => r.id === 'OrderSummary')).toBe(true);
+      }
+    });
+  });
+
+  describe('findResourcesByOwner should include actors', () => {
+    it('finds actors owned by a team', async () => {
+      const result = await findResourcesByOwner({ ownerId: 'support-team' });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.resources.some((r: ResourceResult) => r.id === 'CustomerSupport')).toBe(true);
+      }
+    });
+  });
+
+  describe('getResources should include views collection', () => {
+    it('returns views from the views collection', async () => {
+      const result = await getResources({ collection: 'views' });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.totalCount).toBe(2);
+        expect(result.resources.some((r: any) => r.id === 'OrderSummary')).toBe(true);
+        expect(result.resources.some((r: any) => r.id === 'InventoryStatus')).toBe(true);
+      }
+    });
+  });
+
+  describe('getResources should include actors collection', () => {
+    it('returns actors from the actors collection', async () => {
+      const result = await getResources({ collection: 'actors' });
+      expect('error' in result).toBe(false);
+      if (!('error' in result)) {
+        expect(result.totalCount).toBe(2);
+        expect(result.resources.some((r: any) => r.id === 'CustomerSupport')).toBe(true);
+        expect(result.resources.some((r: any) => r.id === 'WarehouseManager')).toBe(true);
+      }
+    });
   });
 });
