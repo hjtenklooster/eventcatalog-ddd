@@ -17,6 +17,7 @@ interface NodeDataWithResources {
   domain?: ResourceData;
   entity?: ResourceData;
   message?: ResourceData;
+  policy?: ResourceData;
   flow?: ResourceData;
   service?: ResourceData;
   step?: ResourceData;
@@ -31,6 +32,7 @@ export const exportNodeGraphForStudio = (data: ReactFlowJsonObject) => {
     'domain',
     'entity',
     'message',
+    'policy',
     'flow',
     'service',
     'step',

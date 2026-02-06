@@ -35,12 +35,13 @@ export const getQueries = async ({ getAllVersions = true, hydrateServices = true
   }
 
   // 1. Fetch collections in parallel
-  const [allQueries, allServices, allChannels, allDataProducts, allEntities] = await Promise.all([
+  const [allQueries, allServices, allChannels, allDataProducts, allEntities, allPolicies] = await Promise.all([
     getCollection('queries'),
     getCollection('services'),
     getCollection('channels'),
     getCollection('data-products'),
     getCollection('entities'),
+    getCollection('policies'),
   ]);
 
   // 2. Build optimized maps
@@ -63,12 +64,13 @@ export const getQueries = async ({ getAllVersions = true, hydrateServices = true
       const latestVersion = queryVersions[0]?.data.version || query.data.version;
       const versions = queryVersions.map((e) => e.data.version);
 
-      // Find producers and consumers (services + data products + entities)
+      // Find producers and consumers (services + data products + entities + policies)
       const { producers, consumers } = hydrateProducersAndConsumers({
         message: { data: { ...query.data, latestVersion } },
         services: allServices,
         dataProducts: allDataProducts,
         entities: allEntities,
+        policies: allPolicies,
         hydrate: hydrateServices,
       });
 
