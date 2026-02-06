@@ -20,6 +20,8 @@ import { getNodesAndEdges as getNodesAndEdgesForDataProduct } from '@utils/node-
 import { getNodesAndEdges as getNodesAndEdgesForContainer } from '@utils/node-graphs/container-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForEntity } from '@utils/node-graphs/entity-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForPolicy } from '@utils/node-graphs/policy-node-graph';
+import { getNodesAndEdges as getNodesAndEdgesForView } from '@utils/node-graphs/view-node-graph';
+import { getNodesAndEdges as getNodesAndEdgesForActor } from '@utils/node-graphs/actor-node-graph';
 import { convertToMermaid } from '@utils/node-graphs/export-mermaid';
 import config from '@config';
 import type { PageTypes } from '@types';
@@ -40,6 +42,8 @@ const getNodesAndEdgesFunctions = {
   'data-products': getNodesAndEdgesForDataProduct,
   entities: getNodesAndEdgesForEntity,
   policies: getNodesAndEdgesForPolicy,
+  views: getNodesAndEdgesForView,
+  actors: getNodesAndEdgesForActor,
 };
 
 export const getStaticPaths: GetStaticPaths = async () => {
@@ -65,6 +69,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
     'data-products',
     'entities',
     'policies',
+    'views',
+    'actors',
   ];
 
   const allItems = await Promise.all(itemTypes.map((type) => loaders[type]()));

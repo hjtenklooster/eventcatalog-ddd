@@ -18,6 +18,8 @@ interface NodeDataWithResources {
   entity?: ResourceData;
   message?: ResourceData;
   policy?: ResourceData;
+  view?: ResourceData;
+  actor?: ResourceData;
   flow?: ResourceData;
   service?: ResourceData;
   step?: ResourceData;
@@ -33,6 +35,8 @@ export const exportNodeGraphForStudio = (data: ReactFlowJsonObject) => {
     'entity',
     'message',
     'policy',
+    'view',
+    'actor',
     'flow',
     'service',
     'step',
