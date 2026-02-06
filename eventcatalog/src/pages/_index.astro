@@ -29,7 +29,13 @@ const entities = await getEntities({ getAllVersions: false });
 const policies = await getPolicies({ getAllVersions: false });
 
 // Check if catalog has content
-const hasContent = domains.length > 0 || services.length > 0 || messages.length > 0 || flows.length > 0 || entities.length > 0 || policies.length > 0;
+const hasContent =
+  domains.length > 0 ||
+  services.length > 0 ||
+  messages.length > 0 ||
+  flows.length > 0 ||
+  entities.length > 0 ||
+  policies.length > 0;
 
 const getDefaultUrl = (route: string, defaultValue: string) => {
   if (domains.length > 0) return buildUrl(`/${route}/domains/${domains[0].data.id}/${domains[0].data.latestVersion}`);
@@ -95,9 +101,9 @@ const topTiles = [
     description: 'Domain entities',
     href: buildUrl('/discover/entities'),
     icon: Box,
-    bgColor: 'bg-purple-500',
-    borderColor: 'border-purple-200',
-    textColor: 'text-purple-600',
+    bgColor: 'bg-yellow-500',
+    borderColor: 'border-yellow-200',
+    textColor: 'text-yellow-600',
     emptyText: 'No entities yet',
     addHref: 'https://www.eventcatalog.dev/docs/entities',
   },
@@ -107,11 +113,11 @@ const topTiles = [
     description: 'Business rules',
     href: buildUrl('/discover/policies'),
     icon: Cog,
-    bgColor: 'bg-purple-500',
-    borderColor: 'border-purple-200',
-    textColor: 'text-purple-600',
+    bgColor: 'bg-violet-500',
+    borderColor: 'border-violet-200',
+    textColor: 'text-violet-600',
     emptyText: 'No policies yet',
-    addHref: 'https://www.eventcatalog.dev/docs/policies',
+    addHref: 'https://www.eventcatalog.dev/docs/getting-started',
   },
 ];
 

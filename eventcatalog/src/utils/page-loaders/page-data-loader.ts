@@ -20,6 +20,8 @@ export const pageDataLoader: Record<PageTypes, () => Promise<CollectionEntry<Col
   domains: getDomains,
   channels: getChannels,
   flows: getFlows,
+  // Entity/Policy return enriched types (sends/receives hydrated to full entries)
+  // but are structurally compatible with CollectionEntry<CollectionTypes>[]
   entities: getEntities as () => Promise<CollectionEntry<CollectionTypes>[]>,
   policies: getPolicies as () => Promise<CollectionEntry<CollectionTypes>[]>,
   containers: getContainers,

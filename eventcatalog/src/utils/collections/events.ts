@@ -69,13 +69,12 @@ export const getEvents = async ({ getAllVersions = true, hydrateServices = true 
       const latestVersion = eventVersions[0]?.data.version || event.data.version;
       const versions = eventVersions.map((e) => e.data.version);
 
-      // Find producers and consumers (services + data products + entities + policies)
+      // Find producers and consumers (services + data products + entities)
       const { producers, consumers } = hydrateProducersAndConsumers({
         message: { data: { ...event.data, latestVersion } },
         services: allServices,
         dataProducts: allDataProducts,
         entities: allEntities,
-        policies: allPolicies,
         hydrate: hydrateServices,
       });
 

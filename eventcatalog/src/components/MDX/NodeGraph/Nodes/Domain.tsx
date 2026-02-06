@@ -63,12 +63,12 @@ export default function DomainNode({ data, id: nodeId }: any) {
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger>
-        <div className="w-full rounded-lg border-2 border-yellow-400 bg-white shadow-lg">
-          <div className="bg-yellow-100 px-3 py-2 flex items-center space-x-2">
-            {Icon && <Icon className="w-4 h-4 text-yellow-700" />}
+        <div className="w-full rounded-lg border-2 border-cyan-400 bg-white shadow-lg">
+          <div className="bg-cyan-100 px-3 py-2 flex items-center space-x-2">
+            {Icon && <Icon className="w-4 h-4 text-cyan-700" />}
             <div>
-              <span className="text-sm font-bold text-yellow-900">{name}</span>
-              <span className="text-xs text-yellow-700 ml-2">v{version}</span>
+              <span className="text-sm font-bold text-cyan-900">{name}</span>
+              <span className="text-xs text-cyan-700 ml-2">v{version}</span>
             </div>
           </div>
           {mode === 'full' && services.length > 0 && (

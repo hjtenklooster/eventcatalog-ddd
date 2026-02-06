@@ -1,5 +1,4 @@
-import { Cog6ToothIcon } from '@heroicons/react/16/solid';
-import { Handle, Position } from '@xyflow/react';
+import { Handle } from '@xyflow/react';
 import { getIcon } from '@utils/badges';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { buildUrl } from '@utils/url-builder';
@@ -45,62 +44,77 @@ export default function PolicyNode({ data, sourcePosition, targetPosition }: any
   const { mode, policy, externalToDomain, domainName } = data as Data;
   const { id, name, version, conditions = [], styles } = policy;
 
-  const { node: { color = 'purple', label } = {}, icon = 'Cog6ToothIcon' } = styles || {};
+  const { node: { color = 'violet', label } = {}, icon = 'Cog6ToothIcon' } = styles || {};
 
   const Icon = getIcon(icon);
+  const nodeLabel = label || (policy as any).sidebar?.badge || 'Policy';
+  const fontSize = nodeLabel.length > 10 ? '7px' : '9px';
 
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger>
         <div
           className={classNames(
-            'bg-white border border-violet-300 rounded-lg shadow-sm min-w-[200px]',
+            `w-full rounded-md border flex justify-start bg-white text-black border-${color}-400`,
             externalToDomain ? 'border-yellow-400' : ''
           )}
         >
-          {/* Header */}
           <div
             className={classNames(
-              'bg-gradient-to-br from-violet-500 to-violet-600 px-4 py-2 rounded-t-lg',
-              externalToDomain ? 'bg-yellow-400' : ''
+              `relative flex items-center w-5 justify-center rounded-l-sm text-${color}-100`,
+              `border-r-[1px] border-${color}-500`,
+              externalToDomain ? 'bg-yellow-400' : `bg-gradient-to-b from-${color}-500 to-${color}-700`
             )}
           >
-            <div className="flex items-center gap-2">
-              {Icon && <Icon className="w-4 h-4 text-white" />}
-              <span className="font-semibold text-white text-sm">{name || id}</span>
-              <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded">Policy</span>
-            </div>
-            {externalToDomain && domainName && (
-              <div className="text-xs text-yellow-800 font-medium mt-1">from {domainName} domain</div>
+            {Icon && <Icon className="w-4 h-4 opacity-90 text-white absolute top-1" />}
+            {mode === 'full' && (
+              <span
+                className={`rotate -rotate-90 w-1/2 text-center absolute bottom-1 text-[${fontSize}] text-white font-bold uppercase tracking-[3px]`}
+              >
+                {nodeLabel}
+              </span>
             )}
-            {mode === 'full' && <div className="text-xs text-white/80 mt-1">v{version}</div>}
           </div>
-
-          {/* Conditions List */}
-          {conditions.length > 0 ? (
-            <div className="px-4 py-2 space-y-1">
-              {conditions.map((condition, index) => (
-                <div key={index} className="flex items-start gap-2 text-xs text-gray-600">
-                  <span className="text-gray-400 mt-0.5">•</span>
-                  <span className="font-mono">{condition}</span>
-                </div>
-              ))}
+          <div className="p-1 min-w-60 max-w-[min-content]">
+            {targetPosition && <Handle type="target" position={targetPosition} />}
+            {sourcePosition && <Handle type="source" position={sourcePosition} />}
+            <div className={classNames(mode === 'full' ? 'border-b border-gray-200' : '')}>
+              <span className="text-xs font-bold block pt-0.5 pb-0.5">{name || id}</span>
+              <div className="flex justify-between">
+                <span className="text-[10px] font-light block pt-0.5 pb-0.5">v{version}</span>
+                {mode === 'simple' && (
+                  <span className="text-[10px] text-gray-500 font-light block pt-0.5 pb-0.5">{nodeLabel}</span>
+                )}
+              </div>
+              {externalToDomain && domainName && (
+                <div className="text-[8px] text-yellow-800 font-medium pb-0.5">from {domainName} domain</div>
+              )}
             </div>
-          ) : (
-            <div className="px-4 py-3 text-sm text-gray-500 text-center">No conditions defined</div>
-          )}
+            {mode === 'full' && (
+              <div className="divide-y divide-gray-200">
+                {conditions.length > 0 ? (
+                  <div className="py-1 space-y-0.5">
+                    {conditions.map((condition, index) => (
+                      <div key={index} className="flex items-start gap-1 text-[8px] text-gray-600">
+                        <span className="text-gray-400 mt-0.5">•</span>
+                        <span className="font-mono">{condition}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="leading-3 py-1">
+                    <span className="text-[8px] font-light">No conditions defined</span>
+                  </div>
+                )}
 
-          {/* Handles */}
-          <Handle
-            type="target"
-            position={targetPosition || Position.Left}
-            className="!w-3 !h-3 !bg-white !border-2 !border-violet-400 !rounded-full"
-          />
-          <Handle
-            type="source"
-            position={sourcePosition || Position.Right}
-            className="!w-3 !h-3 !bg-white !border-2 !border-violet-400 !rounded-full"
-          />
+                <div className="grid grid-cols-2 gap-x-4 py-1">
+                  <span className="text-xs" style={{ fontSize: '0.2em' }}>
+                    Conditions: {conditions.length}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </ContextMenu.Trigger>
       <ContextMenu.Portal>
@@ -113,6 +127,12 @@ export default function PolicyNode({ data, sourcePosition, targetPosition }: any
             className="text-sm px-2 py-1.5 outline-none cursor-pointer hover:bg-violet-100 rounded-sm flex items-center"
           >
             <a href={buildUrl(`/docs/policies/${id}/${version}`)}>Read documentation</a>
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            asChild
+            className="text-sm px-2 py-1.5 outline-none cursor-pointer hover:bg-violet-100 rounded-sm flex items-center"
+          >
+            <a href={buildUrl(`/visualiser/policies/${id}/${version}`)}>View in visualiser</a>
           </ContextMenu.Item>
         </ContextMenu.Content>
       </ContextMenu.Portal>

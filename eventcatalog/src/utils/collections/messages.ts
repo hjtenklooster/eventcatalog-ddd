@@ -23,7 +23,6 @@ interface HydrateProducersAndConsumersProps {
   services: CollectionEntry<'services'>[];
   dataProducts: CollectionEntry<'data-products'>[];
   entities?: CollectionEntry<'entities'>[];
-  policies?: CollectionEntry<'policies'>[];
   hydrate?: boolean;
 }
 
@@ -36,7 +35,6 @@ export const hydrateProducersAndConsumers = ({
   services = [],
   dataProducts = [],
   entities = [],
-  policies = [],
   hydrate = true,
 }: HydrateProducersAndConsumersProps) => {
   const { id: messageId, version: messageVersion, latestVersion = messageVersion } = message.data;
@@ -48,9 +46,7 @@ export const hydrateProducersAndConsumers = ({
     return satisfies(messageVersion, pointerVersion);
   };
 
-  const toResult = <
-    T extends CollectionEntry<'services'> | CollectionEntry<'data-products'> | CollectionEntry<'entities'> | CollectionEntry<'policies'>,
-  >(
+  const toResult = <T extends CollectionEntry<'services'> | CollectionEntry<'data-products'> | CollectionEntry<'entities'>>(
     resource: T
   ) => {
     if (!hydrate) return { id: resource.data.id, version: resource.data.version };
@@ -87,19 +83,9 @@ export const hydrateProducersAndConsumers = ({
     .filter((e) => e.data.receives?.some((p) => p.id === messageId && matchesVersion(p.version)))
     .map(toResult);
 
-  // Policies that send this message (producers - policies dispatch commands)
-  const policyProducers = policies
-    .filter((p) => p.data.sends?.some((s) => s.id === messageId && matchesVersion(s.version)))
-    .map(toResult);
-
-  // Policies that receive this message (consumers - policies are triggered by events)
-  const policyConsumers = policies
-    .filter((p) => p.data.receives?.some((r) => r.id === messageId && matchesVersion(r.version)))
-    .map(toResult);
-
   return {
-    producers: [...serviceProducers, ...dataProductProducers, ...entityProducers, ...policyProducers],
-    consumers: [...serviceConsumers, ...dataProductConsumers, ...entityConsumers, ...policyConsumers],
+    producers: [...serviceProducers, ...dataProductProducers, ...entityProducers],
+    consumers: [...serviceConsumers, ...dataProductConsumers, ...entityConsumers],
   };
 };
 

@@ -135,10 +135,7 @@ export const getPolicies = async ({ getAllVersions = true }: Props = {}): Promis
  * Find policies that are triggered by a given event.
  * Policy receives events (triggers).
  */
-export const getPoliciesTriggeredByEvent = (
-  policies: CollectionEntry<'policies'>[],
-  event: CollectionEntry<'events'>
-) => {
+export const getPoliciesTriggeredByEvent = (policies: CollectionEntry<'policies'>[], event: CollectionEntry<'events'>) => {
   return policies.filter((policy) => {
     return policy.data.receives?.some((receive) => {
       const idMatch = receive.id === event.data.id;
@@ -159,10 +156,7 @@ export const getPoliciesTriggeredByEvent = (
  * Find policies that dispatch a given command.
  * Policy sends commands (dispatches).
  */
-export const getPoliciesDispatchingCommand = (
-  policies: CollectionEntry<'policies'>[],
-  command: CollectionEntry<'commands'>
-) => {
+export const getPoliciesDispatchingCommand = (policies: CollectionEntry<'policies'>[], command: CollectionEntry<'commands'>) => {
   return policies.filter((policy) => {
     return policy.data.sends?.some((send) => {
       const idMatch = send.id === command.data.id;

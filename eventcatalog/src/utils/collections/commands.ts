@@ -66,13 +66,12 @@ export const getCommands = async ({ getAllVersions = true, hydrateServices = tru
       const latestVersion = commandVersions[0]?.data.version || command.data.version;
       const versions = commandVersions.map((e) => e.data.version);
 
-      // Find producers and consumers (services + data products + entities + policies)
+      // Find producers and consumers (services + data products + entities)
       const { producers, consumers } = hydrateProducersAndConsumers({
         message: { data: { ...command.data, latestVersion } },
         services: allServices,
         dataProducts: allDataProducts,
         entities: allEntities,
-        policies: allPolicies,
         hydrate: hydrateServices,
       });
 

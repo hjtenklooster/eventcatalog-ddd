@@ -82,7 +82,7 @@ const renderEntities = (baseUrl: string) => {
 
 // render the policies from the domain list
 const renderPolicies = (baseUrl: string) => {
-  const domainsWithPolicies = domains.filter((domain) => (domain.data as any).policies?.length > 0);
+  const domainsWithPolicies = domains.filter((domain) => domain.data.policies?.length && domain.data.policies.length > 0);
 
   if (domainsWithPolicies.length === 0) {
     return '';
@@ -90,8 +90,8 @@ const renderPolicies = (baseUrl: string) => {
 
   return domainsWithPolicies
     .map((domain) => {
-      const policiesList = ((domain.data as any).policies || [])
-        ?.map((policy: any) => {
+      const policiesList = domain.data.policies
+        ?.map((policy) => {
           const policyItem = policies.find((p) => p.data.id === policy.id);
           return `    - [${policyItem?.data.name}](${baseUrl}/docs/policies/${policyItem?.data.id}/${policyItem?.data.version}.mdx) - ${policyItem?.data.summary}`;
         })

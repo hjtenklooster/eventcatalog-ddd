@@ -45,8 +45,8 @@ const collection = resourceToCollectionMap[type as keyof typeof resourceToCollec
 // Type-specific styling using CSS variables from theme.css
 // Maps to --ec-badge-{type}-text variables for consistency
 const typeStyles: Record<string, { borderColor: string; label: string }> = {
-  entity: { borderColor: 'var(--ec-badge-query-text)', label: 'Entity' }, // purple
-  policy: { borderColor: 'var(--ec-badge-query-text)', label: 'Policy' }, // purple
+  entity: { borderColor: 'var(--ec-badge-entity-text)', label: 'Entity' }, // yellow
+  policy: { borderColor: 'var(--ec-badge-policy-text)', label: 'Policy' }, // violet
   service: { borderColor: 'var(--ec-badge-service-text)', label: 'Service' }, // pink
   event: { borderColor: 'var(--ec-badge-event-text)', label: 'Event' }, // amber/orange
   command: { borderColor: 'var(--ec-badge-command-text)', label: 'Command' }, // pink

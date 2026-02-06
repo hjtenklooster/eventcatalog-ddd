@@ -75,9 +75,9 @@ export const getColorAndIconForCollection = (collection: string) => {
     case 'ubiquitousLanguages':
       return { color: 'green', Icon: icon };
     case 'entities':
-      return { color: 'purple', Icon: icon };
+      return { color: 'yellow', Icon: icon };
     case 'policies':
-      return { color: 'purple', Icon: icon };
+      return { color: 'violet', Icon: icon };
     case 'domains':
       return { color: 'yellow', Icon: icon };
     case 'services':

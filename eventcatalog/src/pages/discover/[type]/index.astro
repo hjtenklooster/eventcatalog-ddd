@@ -1,5 +1,12 @@
 ---
-import { QueueListIcon, RectangleGroupIcon, BoltIcon, ChatBubbleLeftIcon, CubeIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import {
+  QueueListIcon,
+  RectangleGroupIcon,
+  BoltIcon,
+  ChatBubbleLeftIcon,
+  CubeIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
 import ServerIcon from '@heroicons/react/24/outline/ServerIcon';
 import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
 import { DatabaseIcon, BoxIcon } from 'lucide-react';
@@ -301,7 +308,17 @@ const collectionItemMap = new Map(allCollections.map((item) => [`${item.collecti
 function resolvePointer(pointer: { id: string; version?: string }) {
   if (!pointer?.id) return null;
   // Try each collection type to find the item (since pointers don't specify collection)
-  const collectionTypes = ['services', 'containers', 'channels', 'events', 'commands', 'queries', 'data-products', 'entities', 'policies'];
+  const collectionTypes = [
+    'services',
+    'containers',
+    'channels',
+    'events',
+    'commands',
+    'queries',
+    'data-products',
+    'entities',
+    'policies',
+  ];
   let item = null;
   for (const collectionType of collectionTypes) {
     item = collectionItemMap.get(`${collectionType}:${pointer.id}`);

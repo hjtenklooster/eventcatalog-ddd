@@ -5,7 +5,7 @@
 import { getCollection, getEntry } from 'astro:content';
 import { z } from 'zod';
 import { getSchemasFromResource, getSchemaFormatFromURL } from '@utils/collections/schemas';
-import { getItemsFromCollectionByIdAndSemverOrLatest } from '@utils/collections/util';
+import { getItemsFromCollectionByIdAndSemverOrLatest, satisfies } from '@utils/collections/util';
 import { getUbiquitousLanguageWithSubdomains } from '@utils/collections/domains';
 import { getAbsoluteFilePathForAstroFile } from '@utils/files';
 import fs from 'node:fs';
@@ -287,7 +287,7 @@ const createSendsFilter = (messageId: string, messageVersion?: string) => (resou
   return sends.some((send: any) => {
     const idMatch = send.id === messageId;
     if (!messageVersion || !send.version || send.version === 'latest') return idMatch;
-    return idMatch && send.version === messageVersion;
+    return idMatch && satisfies(send.version, messageVersion);
   });
 };
 
@@ -296,7 +296,7 @@ const createReceivesFilter = (messageId: string, messageVersion?: string) => (re
   return receives.some((receive: any) => {
     const idMatch = receive.id === messageId;
     if (!messageVersion || !receive.version || receive.version === 'latest') return idMatch;
-    return idMatch && receive.version === messageVersion;
+    return idMatch && satisfies(receive.version, messageVersion);
   });
 };
 
@@ -313,7 +313,7 @@ const mapResourceWithOwners = (r: any, collection: 'services' | 'entities' | 'po
 });
 
 /**
- * Get services and entities that produce (send) a specific message
+ * Get services, entities, and policies that produce (send) a specific message
  */
 export async function getProducersOfMessage(params: { messageId: string; messageVersion: string; messageCollection: string }) {
   const [services, entities, policies, message] = await Promise.all([
@@ -352,7 +352,7 @@ export async function getProducersOfMessage(params: { messageId: string; message
 }
 
 /**
- * Get services and entities that consume (receive) a specific message
+ * Get services, entities, and policies that consume (receive) a specific message
  */
 export async function getConsumersOfMessage(params: { messageId: string; messageVersion: string; messageCollection: string }) {
   const [services, entities, policies, message] = await Promise.all([
@@ -392,7 +392,7 @@ export async function getConsumersOfMessage(params: { messageId: string; message
 
 /**
  * Analyze the impact of changing a message (event, command, query)
- * Returns all affected services and entities (producers and consumers) and their owners
+ * Returns all affected services, entities, and policies (producers and consumers) and their owners
  */
 export async function analyzeChangeImpact(params: { messageId: string; messageVersion: string; messageCollection: string }) {
   const [services, entities, policies, message] = await Promise.all([
@@ -989,11 +989,11 @@ export const toolDescriptions = {
     'Use this tool to get the schema or specifications (openapi or asyncapi or graphql) for a resource by its id and version',
   findResourcesByOwner: 'Use this tool to find all resources (services, events, commands, etc.) owned by a specific team or user',
   getProducersOfMessage:
-    'Use this tool to find which services and entities produce (send) a specific message (event, command, or query)',
+    'Use this tool to find which services, entities, and policies produce (send) a specific message (event, command, or query)',
   getConsumersOfMessage:
-    'Use this tool to find which services and entities consume (receive) a specific message (event, command, or query)',
+    'Use this tool to find which services, entities, and policies consume (receive) a specific message (event, command, or query)',
   analyzeChangeImpact:
-    'Use this tool to analyze the impact of changing a message. Returns all affected services and entities (producers and consumers), the teams that own them, and the blast radius of the change',
+    'Use this tool to analyze the impact of changing a message. Returns all affected services, entities, and policies (producers and consumers), the teams that own them, and the blast radius of the change',
   explainBusinessFlow:
     'Use this tool to get detailed information about a business flow (state machine). Returns the flow definition, steps, mermaid diagram if available, and related services',
   getTeams:

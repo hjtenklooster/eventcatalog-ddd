@@ -417,9 +417,9 @@ describe('Events NodeGraph', () => {
       it('should render data product that is both producer and consumer of the same event', async () => {
         const { nodes, edges } = await getNodesAndEdges({ id: 'DataProductEvent', version: '1.0.0' });
 
-        // Should have data product nodes (may have duplicates from producer and consumer logic)
+        // Should have exactly 1 data product node (duplicates are deduplicated by ID at line 653-655 of message-node-graph.ts)
         const dataProductNodes = nodes.filter((n: any) => n.id === 'DataProductProducerConsumer-1.0.0');
-        expect(dataProductNodes.length).toBeGreaterThanOrEqual(1);
+        expect(dataProductNodes.length).toBe(1);
         expect(dataProductNodes[0]).toEqual(
           expect.objectContaining({
             id: 'DataProductProducerConsumer-1.0.0',

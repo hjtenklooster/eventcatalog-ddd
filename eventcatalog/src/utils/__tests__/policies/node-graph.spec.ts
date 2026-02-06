@@ -68,9 +68,7 @@ describe('Policy NodeGraph', () => {
       expect(serviceNode?.type).toBe('services');
 
       // Check edge from service to event
-      const serviceToEventEdge = edges.find(
-        (e) => e.source === 'NotificationService-1.0.0' && e.target === 'OrderCreated-1.0.0'
-      );
+      const serviceToEventEdge = edges.find((e) => e.source === 'NotificationService-1.0.0' && e.target === 'OrderCreated-1.0.0');
       expect(serviceToEventEdge).toBeDefined();
     });
 
@@ -101,9 +99,7 @@ describe('Policy NodeGraph', () => {
       const { edges } = await getNodesAndEdges({ id: 'OrderPolicy', version: '1.0.0' });
 
       // Find edge from policy to command
-      const policyToCommandEdge = edges.find(
-        (e) => e.source === 'OrderPolicy-1.0.0' && e.target === 'ProcessOrder-1.0.0'
-      );
+      const policyToCommandEdge = edges.find((e) => e.source === 'OrderPolicy-1.0.0' && e.target === 'ProcessOrder-1.0.0');
       expect(policyToCommandEdge).toBeDefined();
       expect(policyToCommandEdge?.label).toBe('dispatches');
     });
@@ -150,16 +146,12 @@ describe('Policy NodeGraph', () => {
       expect(commandNode).toBeDefined();
 
       // Edge from policy to command should have 'dispatches' label
-      const policyToCommandEdge = edges.find(
-        (e) => e.source === 'ChannelPolicy-1.0.0' && e.target === 'ChargePayment-1.0.0'
-      );
+      const policyToCommandEdge = edges.find((e) => e.source === 'ChannelPolicy-1.0.0' && e.target === 'ChargePayment-1.0.0');
       expect(policyToCommandEdge).toBeDefined();
       expect(policyToCommandEdge?.label).toBe('dispatches');
 
       // Should have edge from command to channel
-      const commandToChannelEdge = edges.find(
-        (e) => e.source === 'ChargePayment-1.0.0' && e.target === 'OrderChannel-1.0.0'
-      );
+      const commandToChannelEdge = edges.find((e) => e.source === 'ChargePayment-1.0.0' && e.target === 'OrderChannel-1.0.0');
       expect(commandToChannelEdge).toBeDefined();
       expect(commandToChannelEdge?.label).toBe('routes to');
     });

@@ -80,19 +80,29 @@ export const getDomains = async ({
   }
 
   // 1. Fetch collections (always fetch messages to hydrate domain-level sends/receives)
-  const [allDomains, allServices, allEntities, allPolicies, allFlows, allEvents, allCommands, allQueries, allContainers, allDataProducts] =
-    await Promise.all([
-      getCollection('domains'),
-      getCollection('services'),
-      getCollection('entities'),
-      getCollection('policies'),
-      getCollection('flows'),
-      getCollection('events'),
-      getCollection('commands'),
-      getCollection('queries'),
-      getCollection('containers'),
-      getCollection('data-products'),
-    ]);
+  const [
+    allDomains,
+    allServices,
+    allEntities,
+    allPolicies,
+    allFlows,
+    allEvents,
+    allCommands,
+    allQueries,
+    allContainers,
+    allDataProducts,
+  ] = await Promise.all([
+    getCollection('domains'),
+    getCollection('services'),
+    getCollection('entities'),
+    getCollection('policies'),
+    getCollection('flows'),
+    getCollection('events'),
+    getCollection('commands'),
+    getCollection('queries'),
+    getCollection('containers'),
+    getCollection('data-products'),
+  ]);
 
   const allMessages = [...allEvents, ...allCommands, ...allQueries];
   const messageMap = createVersionedMap(allMessages);

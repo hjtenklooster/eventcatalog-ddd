@@ -37,6 +37,10 @@ vi.mock('@utils/collections/util', () => ({
     // Return latest (highest version) if no version specified
     return matches.length > 0 ? [matches[matches.length - 1]] : [];
   }),
+  satisfies: vi.fn((version: string, range: string) => {
+    // Simple mock: for exact version matching or 'latest'
+    return version === range || range === 'latest';
+  }),
 }));
 
 // Mock getUbiquitousLanguageWithSubdomains
