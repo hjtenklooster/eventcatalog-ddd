@@ -676,7 +676,7 @@ export const getPolicyColumns = (tableConfiguration: TableConfiguration) => [
           href={buildUrl(`/docs/${item.collection}/${item.data.id}/${item.data.version}`)}
           className="group inline-flex items-center gap-2 hover:text-[rgb(var(--ec-accent))] transition-colors"
         >
-          <Cog6ToothIcon className="h-4 w-4 text-purple-500 flex-shrink-0" />
+          <Cog6ToothIcon className="h-4 w-4 text-[rgb(var(--ec-badge-policy-text))] flex-shrink-0" />
           <span className="text-sm font-semibold text-[rgb(var(--ec-page-text))] group-hover:text-[rgb(var(--ec-accent))]">
             {item.data.name}
           </span>

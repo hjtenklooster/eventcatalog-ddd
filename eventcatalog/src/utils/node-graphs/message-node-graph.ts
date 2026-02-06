@@ -42,9 +42,9 @@ interface Props {
   collection?: CollectionEntry<CollectionMessageTypes>[];
   channels?: CollectionEntry<'channels'>[];
   // For expanding policy chains: show dispatched commands and their terminal consumers (event pages)
-  policyChainCommands?: any[];
+  policyChainCommands?: CollectionEntry<'commands'>[];
   // For expanding policy chains: show triggering events and their terminal producers (command pages)
-  policyChainEvents?: any[];
+  policyChainEvents?: CollectionEntry<'events'>[];
 }
 
 const getNodesAndEdges = async ({

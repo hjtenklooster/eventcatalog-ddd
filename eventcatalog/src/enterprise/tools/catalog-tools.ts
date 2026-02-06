@@ -287,7 +287,7 @@ const createSendsFilter = (messageId: string, messageVersion?: string) => (resou
   return sends.some((send: any) => {
     const idMatch = send.id === messageId;
     if (!messageVersion || !send.version || send.version === 'latest') return idMatch;
-    return idMatch && satisfies(send.version, messageVersion);
+    return idMatch && satisfies(messageVersion, send.version);
   });
 };
 
@@ -296,7 +296,7 @@ const createReceivesFilter = (messageId: string, messageVersion?: string) => (re
   return receives.some((receive: any) => {
     const idMatch = receive.id === messageId;
     if (!messageVersion || !receive.version || receive.version === 'latest') return idMatch;
-    return idMatch && satisfies(receive.version, messageVersion);
+    return idMatch && satisfies(messageVersion, receive.version);
   });
 };
 

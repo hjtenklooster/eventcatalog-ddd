@@ -157,12 +157,18 @@ export const getDomains = async ({
             .map((dp: { id: string; version: string | undefined }) => findInMap(dataProductMap, dp.id, dp.version))
             .filter((dp: any) => !!dp);
 
+          // Hydrate policies for the subdomain
+          const subdomainPolicies = (subDomain.data.policies || [])
+            .map((p: { id: string; version: string | undefined }) => findInMap(policyMap, p.id, p.version))
+            .filter((p: any) => !!p);
+
           return {
             ...subDomain,
             data: {
               ...subDomain.data,
               services: hydratedServices as any,
               'data-products': subdomainDataProducts as any,
+              policies: subdomainPolicies as any,
             },
           };
         });

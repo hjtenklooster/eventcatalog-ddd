@@ -5,6 +5,7 @@ import utils from '@eventcatalog/sdk';
 import { createVersionedMap, satisfies, findInMap } from './util';
 
 const PROJECT_DIR = process.env.PROJECT_DIR || process.cwd();
+const CACHE_ENABLED = process.env.DISABLE_EVENTCATALOG_CACHE !== 'true';
 
 export type Policy = Omit<CollectionEntry<'policies'>, 'data'> & {
   data: Omit<CollectionEntry<'policies'>['data'], 'sends' | 'receives'> & {
@@ -34,7 +35,7 @@ let memoryCache: Record<string, Policy[]> = {};
 export const getPolicies = async ({ getAllVersions = true }: Props = {}): Promise<Policy[]> => {
   const cacheKey = getAllVersions ? 'allVersions' : 'currentVersions';
 
-  if (memoryCache[cacheKey] && memoryCache[cacheKey].length > 0) {
+  if (memoryCache[cacheKey] && memoryCache[cacheKey].length > 0 && CACHE_ENABLED) {
     return memoryCache[cacheKey];
   }
 

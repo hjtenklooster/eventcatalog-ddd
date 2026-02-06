@@ -46,8 +46,10 @@ export const buildMessageNode = (
 
   const renderProducers = producers.length > 0 && shouldRenderSideBarSection(message, 'producers');
   const renderConsumers = consumers.length > 0 && shouldRenderSideBarSection(message, 'consumers');
-  const renderTriggeredPolicies = collection === 'events' && triggeredPolicies.length > 0;
-  const renderDispatchingPolicies = collection === 'commands' && dispatchingPolicies.length > 0;
+  const renderTriggeredPolicies =
+    collection === 'events' && triggeredPolicies.length > 0 && shouldRenderSideBarSection(message, 'triggeredPolicies');
+  const renderDispatchingPolicies =
+    collection === 'commands' && dispatchingPolicies.length > 0 && shouldRenderSideBarSection(message, 'dispatchingPolicies');
   const renderRepository = message.data.repository && shouldRenderSideBarSection(message, 'repository');
 
   // Determine badge based on collection type

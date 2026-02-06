@@ -97,6 +97,8 @@ const getUrlForItem = (node: any, key: string) => {
     pluralType = type + 's';
   } else if (type === 'query') {
     pluralType = 'queries';
+  } else if (type === 'policy') {
+    pluralType = 'policies';
   }
 
   return buildUrl(`/docs/${pluralType}/${id}/${version}`);
