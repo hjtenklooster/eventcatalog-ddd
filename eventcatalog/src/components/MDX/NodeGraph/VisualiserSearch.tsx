@@ -22,6 +22,11 @@ interface EntityData {
   version?: string;
 }
 
+interface PolicyData {
+  name: string;
+  version?: string;
+}
+
 interface NodeDataContent extends Record<string, unknown> {
   message?: {
     data: MessageData;
@@ -34,6 +39,9 @@ interface NodeDataContent extends Record<string, unknown> {
   };
   entity?: {
     data: EntityData;
+  };
+  policy?: {
+    data: PolicyData;
   };
   name?: string;
   version?: string;
@@ -81,6 +89,7 @@ const VisualiserSearch = forwardRef<VisualiserSearchRef, VisualiserSearchProps>(
         node.data?.service?.data?.name ||
         node.data?.domain?.data?.name ||
         node.data?.entity?.data?.name ||
+        node.data?.policy?.data?.name ||
         node.data?.name ||
         node.id;
       const version =
@@ -88,6 +97,7 @@ const VisualiserSearch = forwardRef<VisualiserSearchRef, VisualiserSearchProps>(
         node.data?.service?.data?.version ||
         node.data?.domain?.data?.version ||
         node.data?.entity?.data?.version ||
+        node.data?.policy?.data?.version ||
         node.data?.version;
       return version ? `${name} (v${version})` : name;
     }, []);
@@ -101,6 +111,8 @@ const VisualiserSearch = forwardRef<VisualiserSearchRef, VisualiserSearchProps>(
         queries: 'bg-green-600 text-white',
         channels: 'bg-gray-600 text-white',
         domains: 'bg-yellow-500 text-white',
+        entities: 'bg-purple-600 text-white',
+        policies: 'bg-violet-600 text-white',
         externalSystem: 'bg-pink-600 text-white',
         actor: 'bg-yellow-500 text-white',
         step: 'bg-gray-700 text-white',
