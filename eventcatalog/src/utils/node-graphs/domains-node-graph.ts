@@ -11,6 +11,7 @@ import { getNodesAndEdges as getServicesNodeAndEdges } from './services-node-gra
 import { getNodesAndEdges as getDataProductsNodeAndEdges } from './data-products-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForEntity } from './entity-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForPolicy } from './policy-node-graph';
+import { getNodesAndEdges as getNodesAndEdgesForView } from './view-node-graph';
 import merge from 'lodash.merge';
 import { createVersionedMap, findInMap } from '@utils/collections/util';
 import type { Node } from '@xyflow/react';
@@ -202,12 +203,13 @@ export const getNodesAndEdges = async ({
     edges = new Map();
 
   // 1. Parallel Fetching
-  const [domains, services, dataProducts, entities, policies] = await Promise.all([
+  const [domains, services, dataProducts, entities, policies, views] = await Promise.all([
     getCollection('domains'),
     getCollection('services'),
     getCollection('data-products'),
     getCollection('entities'),
     getCollection('policies'),
+    getCollection('views'),
   ]);
 
   const domain = domains.find((service) => service.data.id === id && service.data.version === version);
@@ -226,6 +228,7 @@ export const getNodesAndEdges = async ({
   const dataProductMap = createVersionedMap(dataProducts);
   const entityMap = createVersionedMap(entities);
   const policyMap = createVersionedMap(policies);
+  const viewMap = createVersionedMap(views);
 
   const rawServices = domain?.data.services || [];
   const rawSubDomains = domain?.data.domains || [];
@@ -262,6 +265,14 @@ export const getNodesAndEdges = async ({
     // Only include policies that participate in messaging
     .filter((p) => p.data.sends?.length > 0 || p.data.receives?.length > 0)
     .map((pol) => ({ id: pol.data.id, version: pol.data.version }));
+
+  const rawViews = domain?.data.views || [];
+  const domainViewsWithVersion = rawViews
+    .map((view) => findInMap(viewMap, view.id, view.version))
+    .filter((v): v is any => !!v)
+    // Only include views that participate in messaging
+    .filter((v) => v.data.subscribes?.length > 0 || v.data.informs?.length > 0)
+    .map((vw) => ({ id: vw.data.id, version: vw.data.version }));
 
   // Get all the nodes for everything
 
@@ -343,6 +354,19 @@ export const getNodesAndEdges = async ({
       nodes.set(n.id, nodes.has(n.id) ? merge(nodes.get(n.id), n) : n);
     });
     policyEdges.forEach((e) => edges.set(e.id, e));
+  }
+
+  for (const view of domainViewsWithVersion) {
+    const { nodes: viewNodes, edges: viewEdges } = await getNodesAndEdgesForView({
+      id: view.id,
+      version: view.version,
+      mode,
+      defaultFlow: flow,
+    });
+    viewNodes.forEach((n) => {
+      nodes.set(n.id, nodes.has(n.id) ? merge(nodes.get(n.id), n) : n);
+    });
+    viewEdges.forEach((e) => edges.set(e.id, e));
   }
 
   // Add group node to the graph first before calculating positions

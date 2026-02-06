@@ -28,7 +28,7 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline';
 import { ArrowsRightLeftIcon } from '@heroicons/react/20/solid';
-import { Box, Boxes, SquarePenIcon, DatabaseIcon, DatabaseZapIcon, ShieldCheckIcon, AlignLeft, Package, Cog } from 'lucide-react';
+import { Box, Boxes, SquarePenIcon, DatabaseIcon, DatabaseZapIcon, ShieldCheckIcon, AlignLeft, Package, Cog, Eye, User } from 'lucide-react';
 
 import { getSpecificationsForService } from '@utils/collections/services';
 import { resourceToCollectionMap, collectionToResourceMap, getDeprecatedDetails } from '@utils/collections/util';
@@ -162,6 +162,14 @@ const getBadge = () => {
 
   if (props.collection === 'policies') {
     return [{ backgroundColor: 'purple', textColor: 'purple', content: 'Policy', icon: Cog, class: 'text-gray' }];
+  }
+
+  if (props.collection === 'views') {
+    return [{ backgroundColor: 'green', textColor: 'green', content: 'View', icon: Eye, class: 'text-gray' }];
+  }
+
+  if (props.collection === 'actors') {
+    return [{ backgroundColor: 'amber', textColor: 'amber', content: 'Actor', icon: User, class: 'text-gray' }];
   }
 
   if (props.collection === 'data-products') {
