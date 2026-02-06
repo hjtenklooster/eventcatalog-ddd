@@ -21,6 +21,8 @@ export const NODE_COLOR_CLASSES: Record<string, string> = {
   queries: 'bg-green-600',
   channels: 'bg-gray-600',
   externalSystem: 'bg-pink-600',
+  view: 'bg-green-500',
+  views: 'bg-green-500',
   actor: 'bg-yellow-500',
   step: 'bg-gray-700',
   data: 'bg-blue-600',
@@ -38,6 +40,8 @@ export const NODE_TYPE_LABELS: Record<string, string> = {
   queries: 'Query',
   channels: 'Channel',
   externalSystem: 'External System',
+  view: 'View',
+  views: 'View',
   actor: 'Actor',
   step: 'Step',
   data: 'Data',
@@ -72,7 +76,7 @@ export function getConnectedNodes(centerNodeId: string, nodes: Node[], edges: Ed
 }
 
 // Entity keys that follow the standard data structure pattern
-const ENTITY_KEYS = ['service', 'message', 'flow', 'channel', 'domain', 'entity', 'dataProduct', 'policy'] as const;
+const ENTITY_KEYS = ['service', 'message', 'flow', 'channel', 'domain', 'entity', 'dataProduct', 'policy', 'view', 'actor'] as const;
 
 /**
  * Extract display information from a ReactFlow node
@@ -129,6 +133,8 @@ const DOC_PATH_MAP: Record<string, string> = {
   entity: 'entities',
   dataProduct: 'data-products',
   policy: 'policies',
+  view: 'views',
+  actor: 'actors',
 };
 
 /**

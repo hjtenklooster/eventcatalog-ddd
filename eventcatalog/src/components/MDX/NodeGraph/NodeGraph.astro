@@ -16,6 +16,8 @@ import { getNodesAndEdges as getNodesAndEdgesForFlows } from '@utils/node-graphs
 import { getNodesAndEdges as getNodesAndEdgesForDataProduct } from '@utils/node-graphs/data-products-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForEntity } from '@utils/node-graphs/entity-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForPolicy } from '@utils/node-graphs/policy-node-graph';
+import { getNodesAndEdges as getNodesAndEdgesForView } from '@utils/node-graphs/view-node-graph';
+import { getNodesAndEdges as getNodesAndEdgesForActor } from '@utils/node-graphs/actor-node-graph';
 import { buildUrl } from '@utils/url-builder';
 import { getVersionFromCollection } from '@utils/collections/versions';
 import { pageDataLoader } from '@utils/page-loaders/page-data-loader';
@@ -71,6 +73,8 @@ const getNodesAndEdgesFunctions = {
   'data-products': getNodesAndEdgesForDataProduct,
   entities: getNodesAndEdgesForEntity,
   policies: getNodesAndEdgesForPolicy,
+  views: getNodesAndEdgesForView,
+  actors: getNodesAndEdgesForActor,
 };
 
 let links: { label: string; url: string }[] = [];
