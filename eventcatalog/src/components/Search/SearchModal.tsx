@@ -98,16 +98,12 @@ const getUrlForItem = (node: any, key: string) => {
 
   // Pluralize type for URL if needed
   let pluralType = type;
-  if (['event', 'command', 'domain', 'service', 'flow', 'container', 'channel'].includes(type)) {
+  if (['event', 'command', 'domain', 'service', 'flow', 'container', 'channel', 'view', 'actor'].includes(type)) {
     pluralType = type + 's';
   } else if (type === 'query') {
     pluralType = 'queries';
   } else if (type === 'policy') {
     pluralType = 'policies';
-  } else if (type === 'view') {
-    pluralType = 'views';
-  } else if (type === 'actor') {
-    pluralType = 'actors';
   }
 
   return buildUrl(`/docs/${pluralType}/${id}/${version}`);

@@ -662,155 +662,31 @@ const getNodesAndEdges = async ({
   // View/Actor chain expansion for event pages: views subscribing → actors they inform
   if (message.collection === 'events' && viewActorChainViews && viewActorChainActors) {
     const actorMap = createVersionedMap(viewActorChainActors);
-    const messageNodeId = generateIdForNode(message);
-
-    const subscribedViews = viewActorChainViews.filter((v) =>
-      v.data.subscribes?.some((sub: { id: string; version?: string }) => {
-        const idMatch = sub.id === message.data.id;
-        if (!sub.version || sub.version === 'latest') return idMatch;
-        return idMatch && sub.version === message.data.version;
-      })
-    );
-
-    for (const view of subscribedViews) {
-      const viewId = generateIdForNode(view);
-
-      nodes.push(
-        createNode({
-          id: viewId,
-          type: 'view',
-          data: { mode, view: { ...view.data } },
-          position: { x: 0, y: 0 },
-        })
-      );
-
-      edges.push(
-        createEdge({
-          id: generatedIdForEdge(message, view),
-          source: messageNodeId,
-          target: viewId,
-          label: 'subscribes',
-          data: {
-            customColor: getColorFromString(message.data.id),
-            rootSourceAndTarget: {
-              source: { id: messageNodeId, collection: message.collection },
-              target: { id: viewId, collection: 'views' },
-            },
-          },
-        })
-      );
-
-      // Actors this view informs
-      const viewInforms = view.data.informs || [];
-      for (const informRef of viewInforms) {
-        const actor = findInMap(actorMap, informRef.id, informRef.version);
-        if (!actor) continue;
-
-        const actorId = generateIdForNode(actor);
-
-        nodes.push(
-          createNode({
-            id: actorId,
-            type: 'actor',
-            data: { mode, actor: { ...actor.data } },
-            position: { x: 0, y: 0 },
-          })
-        );
-
-        edges.push(
-          createEdge({
-            id: generatedIdForEdge(view, actor),
-            source: viewId,
-            target: actorId,
-            label: 'informs',
-            data: {
-              customColor: getColorFromString(view.data.id),
-              rootSourceAndTarget: {
-                source: { id: viewId, collection: 'views' },
-                target: { id: actorId, collection: 'actors' },
-              },
-            },
-          })
-        );
-      }
-    }
+    const { nodes: vaNodes, edges: vaEdges } = getViewActorChainNodesForEvent({
+      message: message as CollectionEntry<'events'>,
+      messageNodeId: generateIdForNode(message),
+      views: viewActorChainViews,
+      actorMap,
+      mode,
+      edgeData: viewActorFullEdgeData,
+    });
+    nodes.push(...vaNodes);
+    edges.push(...vaEdges);
   }
 
   // View/Actor chain expansion for command pages: actors issuing ← views they read
   if (message.collection === 'commands' && viewActorChainActors && viewActorChainViews) {
     const viewMap = createVersionedMap(viewActorChainViews);
-    const messageNodeId = generateIdForNode(message);
-
-    const issuingActors = viewActorChainActors.filter((a) =>
-      a.data.issues?.some((iss: { id: string; version?: string }) => {
-        const idMatch = iss.id === message.data.id;
-        if (!iss.version || iss.version === 'latest') return idMatch;
-        return idMatch && iss.version === message.data.version;
-      })
-    );
-
-    for (const actor of issuingActors) {
-      const actorId = generateIdForNode(actor);
-
-      nodes.push(
-        createNode({
-          id: actorId,
-          type: 'actor',
-          data: { mode, actor: { ...actor.data } },
-          position: { x: 0, y: 0 },
-        })
-      );
-
-      edges.push(
-        createEdge({
-          id: generatedIdForEdge(actor, message),
-          source: actorId,
-          target: messageNodeId,
-          label: 'issues',
-          data: {
-            customColor: getColorFromString(message.data.id),
-            rootSourceAndTarget: {
-              source: { id: actorId, collection: 'actors' },
-              target: { id: messageNodeId, collection: message.collection },
-            },
-          },
-        })
-      );
-
-      // Views this actor reads
-      const actorReads = actor.data.reads || [];
-      for (const readRef of actorReads) {
-        const view = findInMap(viewMap, readRef.id, readRef.version);
-        if (!view) continue;
-
-        const viewId = generateIdForNode(view);
-
-        nodes.push(
-          createNode({
-            id: viewId,
-            type: 'view',
-            data: { mode, view: { ...view.data } },
-            position: { x: 0, y: 0 },
-          })
-        );
-
-        edges.push(
-          createEdge({
-            id: generatedIdForEdge(view, actor),
-            source: viewId,
-            target: actorId,
-            label: 'informs',
-            data: {
-              customColor: getColorFromString(view.data.id),
-              rootSourceAndTarget: {
-                source: { id: viewId, collection: 'views' },
-                target: { id: actorId, collection: 'actors' },
-              },
-            },
-          })
-        );
-      }
-    }
+    const { nodes: vaNodes, edges: vaEdges } = getViewActorChainNodesForCommand({
+      message: message as CollectionEntry<'commands'>,
+      messageNodeId: generateIdForNode(message),
+      actors: viewActorChainActors,
+      viewMap,
+      mode,
+      edgeData: viewActorFullEdgeData,
+    });
+    nodes.push(...vaNodes);
+    edges.push(...vaEdges);
   }
 
   // Dedup nodes and edges (policy/view-actor chain expansion can create duplicates)
@@ -860,8 +736,8 @@ export const getNodesAndEdgesForCommands = async ({
     getCommands(),
     getChannels(),
     getEvents(),
-    getCollection('views'),
-    getCollection('actors'),
+    getCollection('views').then((r) => r.filter((v) => v.data.hidden !== true)),
+    getCollection('actors').then((r) => r.filter((a) => a.data.hidden !== true)),
   ]);
   return getNodesAndEdges({
     id,
@@ -888,8 +764,8 @@ export const getNodesAndEdgesForEvents = async ({
     getEvents(),
     getChannels(),
     getCommands(),
-    getCollection('views'),
-    getCollection('actors'),
+    getCollection('views').then((r) => r.filter((v) => v.data.hidden !== true)),
+    getCollection('actors').then((r) => r.filter((a) => a.data.hidden !== true)),
   ]);
   return getNodesAndEdges({
     id,
@@ -980,7 +856,10 @@ export const getNodesAndEdgesForConsumedMessage = ({
     })
   );
 
-  const targetMessageConfiguration = target.data.receives?.find((receive) => receive.id === message.data.id);
+  const targetMessageConfiguration =
+    target.collection !== 'views' && target.collection !== 'actors'
+      ? target.data.receives?.find((receive) => receive.id === message.data.id)
+      : undefined;
   const channelsFromMessageToTarget = targetMessageConfiguration?.from ?? [];
   const hydratedChannelsFromMessageToTarget = channelsFromMessageToTarget
     .map((channel) => findInMap(map, channel.id, channel.version))
@@ -1414,8 +1293,8 @@ export const getNodesAndEdgesForConsumedMessage = ({
       viewMap: viewActorViewMap,
       mode,
       edgeData: viewActorFullEdgeData,
-      selfFilterActor: isTargetActor ? { id: target.data.id, version: target.data.version, collection: 'actors' } : undefined,
-      selfFilterView: isTargetView ? { id: target.data.id, version: target.data.version, collection: 'views' } : undefined,
+      selfFilterActor: isTargetActor ? { id: target.data.id, version: target.data.version } : undefined,
+      selfFilterView: isTargetView ? { id: target.data.id, version: target.data.version } : undefined,
     });
     nodes.push(...vaNodes);
     edges.push(...vaEdges);
@@ -1523,7 +1402,10 @@ export const getNodesAndEdgesForProducedMessage = ({
     })
   );
 
-  const sourceMessageConfiguration = source.data.sends?.find((send) => send.id === message.data.id);
+  const sourceMessageConfiguration =
+    source.collection !== 'views' && source.collection !== 'actors'
+      ? source.data.sends?.find((send) => send.id === message.data.id)
+      : undefined;
   const channelsFromSourceToMessage = sourceMessageConfiguration?.to ?? [];
 
   const hydratedChannelsFromSourceToMessage = channelsFromSourceToMessage
@@ -1930,8 +1812,8 @@ export const getNodesAndEdgesForProducedMessage = ({
       actorMap: viewActorActorMap,
       mode,
       edgeData: viewActorFullEdgeData,
-      selfFilterView: isSourceView ? { id: source.data.id, version: source.data.version, collection: 'views' } : undefined,
-      selfFilterActor: isSourceActor ? { id: source.data.id, version: source.data.version, collection: 'actors' } : undefined,
+      selfFilterView: isSourceView ? { id: source.data.id, version: source.data.version } : undefined,
+      selfFilterActor: isSourceActor ? { id: source.data.id, version: source.data.version } : undefined,
     });
     nodes.push(...vaNodes);
     edges.push(...vaEdges);

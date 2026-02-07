@@ -14,6 +14,7 @@ import {
 import { findInMap, createVersionedMap } from '@utils/collections/util';
 import { getConsumersOfMessage } from '@utils/collections/services';
 import { getEntityConsumersOfMessage } from '@utils/collections/entities';
+import { getViewsInformingActor } from '@utils/collections/views';
 
 type DagreGraph = any;
 
@@ -88,6 +89,56 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
     }));
 
     // Left expansion: events this view subscribes to
+    const viewSubscribes = view.data.subscribes || [];
+    for (const subRef of viewSubscribes) {
+      const event = findInMap(eventMap, subRef.id, subRef.version);
+      if (!event) continue;
+
+      const eventNodeId = generateIdForNode(event);
+
+      nodes.push(createNode({
+        id: eventNodeId,
+        type: event.collection,
+        data: { mode, message: { ...event.data } },
+        position: { x: 0, y: 0 },
+      }));
+
+      // event --subscribes--> view
+      edges.push(createEdge({
+        id: generatedIdForEdge(event, view),
+        source: eventNodeId,
+        target: viewNodeId,
+        label: 'subscribes',
+        data: { customColor: getColorFromString(event.data.id) },
+      }));
+    }
+  }
+
+  // Left (reverse): views that declare they inform this actor (deduplicated against reads)
+  const readsIds = new Set(reads.map((v) => `${v.data.id}:${v.data.version}`));
+  const informedByViews = getViewsInformingActor(views, actor).filter(
+    (v) => !readsIds.has(`${v.data.id}:${v.data.version}`)
+  );
+
+  for (const view of informedByViews) {
+    const viewNodeId = generateIdForNode(view);
+
+    nodes.push(createNode({
+      id: viewNodeId,
+      type: 'view',
+      data: { mode, view: { ...view.data } },
+      position: { x: 0, y: 0 },
+    }));
+
+    edges.push(createEdge({
+      id: generatedIdForEdge(view, actor),
+      source: viewNodeId,
+      target: actorNodeId,
+      label: 'informs',
+      data: { customColor: getColorFromString(view.data.id) },
+    }));
+
+    // Left expansion: events this informedByView subscribes to
     const viewSubscribes = view.data.subscribes || [];
     for (const subRef of viewSubscribes) {
       const event = findInMap(eventMap, subRef.id, subRef.version);

@@ -109,7 +109,7 @@ export const mockSimpleActor = {
   },
 };
 
-// Older version of CustomerSupportAgent for versioning tests
+// Older version of CustomerSupportAgent (included in allActors for version resolution)
 export const mockCustomerSupportAgentOld = {
   id: 'CustomerSupportAgent-0.0.1',
   slug: 'CustomerSupportAgent',

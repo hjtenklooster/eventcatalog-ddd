@@ -129,7 +129,20 @@ export const mockSimpleView = {
   },
 };
 
-// Older version of OrderSummaryView for versioning tests
+// Actor that reads OrderSummaryView but is NOT in its informs list (for readByActors tests)
+export const mockAnalystActor = {
+  id: 'DataAnalyst-1.0.0',
+  slug: 'DataAnalyst',
+  collection: 'actors',
+  data: {
+    id: 'DataAnalyst',
+    name: 'Data Analyst',
+    version: '1.0.0',
+    reads: [{ id: 'OrderSummaryView', version: '1.0.0' }],
+  },
+};
+
+// Older version of OrderSummaryView (included in allViews for version resolution)
 export const mockOrderSummaryViewOld = {
   id: 'OrderSummaryView-0.0.1',
   slug: 'OrderSummaryView',

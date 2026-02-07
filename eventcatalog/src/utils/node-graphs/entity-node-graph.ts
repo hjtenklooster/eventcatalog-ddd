@@ -67,6 +67,7 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
   const eventMap = createVersionedMap(events);
   const commandMap = createVersionedMap(commands);
   const actorMap = createVersionedMap(actors);
+  const viewMap = createVersionedMap(views);
 
   // Find the entity
   const entity = findInMap(entityMap, id, version);
@@ -235,7 +236,7 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
         message,
         messageNodeId: messageId,
         actors,
-        viewMap: createVersionedMap(views),
+        viewMap,
         mode,
       });
       nodes.push(...vaNodes);

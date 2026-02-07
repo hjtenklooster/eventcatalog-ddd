@@ -68,7 +68,7 @@ export const buildActorNode = (actor: Actor, owners: any[], context: ResourceGro
         type: 'group',
         title: 'Issues',
         icon: 'Terminal',
-        pages: issuesCommands.map((cmd) => `commands:${cmd.data.id}:${cmd.data.version}`),
+        pages: issuesCommands.map((cmd) => `command:${cmd.data.id}:${cmd.data.version}`),
       },
       renderOwners && buildOwnersSection(owners),
       renderRepository && buildRepositorySection(actor.data.repository as { url: string; language: string }),

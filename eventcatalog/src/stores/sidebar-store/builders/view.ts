@@ -14,7 +14,7 @@ import {
 export const buildViewNode = (view: View, owners: any[], context: ResourceGroupContext): NavNode => {
   const subscribesMessages = view.data.subscribes || [];
   const informsActors = view.data.informs || [];
-  const readByActors = (view.data as any).readByActors || [];
+  const readByActors = view.data.readByActors || [];
 
   const hasAttachments = (view.data.attachments?.length ?? 0) > 0;
   const viewDiagrams = view.data.diagrams || [];
@@ -64,7 +64,7 @@ export const buildViewNode = (view: View, owners: any[], context: ResourceGroupC
           type: 'group',
           title: 'Subscribes',
           icon: 'Zap',
-          pages: subscribesMessages.map((event) => `events:${event.data.id}:${event.data.version}`),
+          pages: subscribesMessages.map((event) => `event:${event.data.id}:${event.data.version}`),
         },
       // Informs (actors this view informs)
       informsActors.length > 0 && {

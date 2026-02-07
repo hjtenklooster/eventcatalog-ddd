@@ -1,6 +1,6 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
-import path from 'path';
+import path from 'node:path';
 import utils from '@eventcatalog/sdk';
 import { createVersionedMap, satisfies, findInMap } from './util';
 import { getActorsReadingView } from './actors';

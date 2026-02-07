@@ -6,8 +6,6 @@ import {
   generateIdForNode,
   generatedIdForEdge,
   getColorFromString,
-  getEdgeLabelForServiceAsTarget,
-  getEdgeLabelForMessageAsSource,
 } from './utils';
 import { findInMap } from '@utils/collections/util';
 import { getViewsSubscribedToEvent } from '@utils/collections/views';
@@ -26,7 +24,6 @@ interface EdgeDataFactory {
 interface SelfFilter {
   id: string;
   version: string;
-  collection: string;
 }
 
 const simpleEdgeData: EdgeDataFactory = (colorSource) => ({
@@ -38,8 +35,7 @@ const fullEdgeData: EdgeDataFactory = (colorSource, source, target) => ({
   rootSourceAndTarget: { source, target },
 });
 
-export { simpleEdgeData as viewActorSimpleEdgeData, fullEdgeData as viewActorFullEdgeData };
-export type { EdgeDataFactory as ViewActorEdgeDataFactory, SelfFilter as ViewActorSelfFilter };
+export { fullEdgeData as viewActorFullEdgeData };
 
 interface ViewActorChainForEventParams {
   message: CollectionEntry<'events'>;

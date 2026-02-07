@@ -116,8 +116,10 @@ const renderViews = (baseUrl: string) => {
       const viewsList = domain.data.views
         ?.map((view) => {
           const viewItem = views.find((v) => v.data.id === view.id);
-          return `    - [${viewItem?.data.name}](${baseUrl}/docs/views/${viewItem?.data.id}/${viewItem?.data.version}.mdx) - ${viewItem?.data.summary}`;
+          if (!viewItem) return null;
+          return `    - [${viewItem.data.name}](${baseUrl}/docs/views/${viewItem.data.id}/${viewItem.data.version}.mdx) - ${viewItem.data.summary}`;
         })
+        .filter(Boolean)
         .join('\n');
       return `- ${domain.data.name} Domain\n${viewsList || ''}`;
     })

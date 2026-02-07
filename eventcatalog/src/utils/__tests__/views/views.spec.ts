@@ -7,6 +7,7 @@ import {
   mockDomains,
   mockSimpleView,
   mockOrderSummaryViewOld,
+  mockAnalystActor,
 } from './mocks';
 import { getViews, getViewsSubscribedToEvent, getViewsInformingActor } from '@utils/collections/views';
 
@@ -24,7 +25,7 @@ vi.mock('astro:content', async (importOriginal) => {
         case 'events':
           return Promise.resolve(mockEvents);
         case 'actors':
-          return Promise.resolve(mockActors);
+          return Promise.resolve([...mockActors, mockAnalystActor]);
         default:
           return Promise.resolve([]);
       }
@@ -70,14 +71,27 @@ describe('Views', () => {
       );
     });
 
-    it('should include readByActors reverse lookup', async () => {
+    it('should include readByActors reverse lookup with deduplication against informs', async () => {
       const views = await getViews();
       const orderView = views.find((v) => v.data.id === 'OrderSummaryView' && v.data.version === '1.0.0');
 
       expect(orderView).toBeDefined();
-      // CustomerSupportAgent declares reads: [{ id: 'OrderSummaryView', version: '1.0.0' }]
-      // but it's also in informs, so readByActors should be deduplicated (empty here)
-      expect(orderView!.data.readByActors).toBeDefined();
+      // CustomerSupportAgent reads OrderSummaryView but is also in informs → deduplicated out
+      // DataAnalyst reads OrderSummaryView and is NOT in informs → included
+      expect(orderView!.data.readByActors).toHaveLength(1);
+      expect(orderView!.data.readByActors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ data: expect.objectContaining({ id: 'DataAnalyst', version: '1.0.0' }) }),
+        ])
+      );
+    });
+
+    it('should return empty readByActors when no actor reads the view', async () => {
+      const views = await getViews();
+      const simpleView = views.find((v) => v.data.id === 'SimpleView');
+
+      expect(simpleView).toBeDefined();
+      expect(simpleView!.data.readByActors).toEqual([]);
     });
 
     it('should include subscribesRaw and informsRaw for graph building', async () => {

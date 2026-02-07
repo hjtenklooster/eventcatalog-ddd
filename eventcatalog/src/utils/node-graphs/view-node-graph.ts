@@ -15,6 +15,7 @@ import {
 import { findInMap, createVersionedMap } from '@utils/collections/util';
 import { getProducersOfMessage, getConsumersOfMessage } from '@utils/collections/services';
 import { getEntityProducersOfMessage, getEntityConsumersOfMessage } from '@utils/collections/entities';
+import { getActorsReadingView } from '@utils/collections/actors';
 
 type DagreGraph = any;
 
@@ -146,6 +147,95 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
       source: viewNodeId,
       target: actorNodeId,
       label: 'informs',
+      data: { customColor: getColorFromString(view.data.id) },
+    }));
+
+    // Right expansion: commands this actor issues
+    const actorIssues = actor.data.issues || [];
+    for (const issueRef of actorIssues) {
+      const command = findInMap(commandMap, issueRef.id, issueRef.version);
+      if (!command) continue;
+
+      const commandNodeId = generateIdForNode(command);
+
+      nodes.push(createNode({
+        id: commandNodeId,
+        type: command.collection,
+        data: { mode, message: { ...command.data } },
+        position: { x: 0, y: 0 },
+      }));
+
+      // actor --issues--> command
+      edges.push(createEdge({
+        id: generatedIdForEdge(actor, command),
+        source: actorNodeId,
+        target: commandNodeId,
+        label: 'issues',
+        data: { customColor: getColorFromString(command.data.id) },
+      }));
+
+      // Terminal consumers of the command: entities
+      const cmdEntityConsumers = getEntityConsumersOfMessage(entities, command);
+      for (const ec of cmdEntityConsumers) {
+        const ecId = generateIdForNode(ec);
+        nodes.push(createNode({
+          id: ecId,
+          type: 'entities',
+          data: { mode, entity: { ...ec.data } },
+          position: { x: 0, y: 0 },
+        }));
+
+        edges.push(createEdge({
+          id: generatedIdForEdge(command, ec),
+          source: commandNodeId,
+          target: ecId,
+          label: 'subscribes to',
+          data: { customColor: getColorFromString(command.data.id) },
+        }));
+      }
+
+      // Terminal consumers of the command: services
+      const cmdServiceConsumers = getConsumersOfMessage(services, command);
+      for (const sc of cmdServiceConsumers) {
+        const scId = generateIdForNode(sc);
+        nodes.push(createNode({
+          id: scId,
+          type: 'services',
+          data: { mode, service: { ...sc.data } },
+          position: { x: 0, y: 0 },
+        }));
+
+        edges.push(createEdge({
+          id: generatedIdForEdge(command, sc),
+          source: commandNodeId,
+          target: scId,
+          label: getEdgeLabelForMessageAsSource(command),
+          data: { customColor: getColorFromString(command.data.id) },
+        }));
+      }
+    }
+  }
+
+  // Right: actors that declare they read this view (reverse relationship), excluding those already in informs
+  const readByActors = getActorsReadingView(actors, view).filter(
+    (ra) => !informs.some((inf) => inf.data.id === ra.data.id && inf.data.version === ra.data.version)
+  );
+
+  for (const actor of readByActors) {
+    const actorNodeId = generateIdForNode(actor);
+
+    nodes.push(createNode({
+      id: actorNodeId,
+      type: 'actor',
+      data: { mode, actor: { ...actor.data } },
+      position: { x: 0, y: 0 },
+    }));
+
+    edges.push(createEdge({
+      id: generatedIdForEdge(view, actor),
+      source: viewNodeId,
+      target: actorNodeId,
+      label: 'reads',
       data: { customColor: getColorFromString(view.data.id) },
     }));
 

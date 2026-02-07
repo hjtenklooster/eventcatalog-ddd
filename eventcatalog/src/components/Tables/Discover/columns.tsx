@@ -12,8 +12,8 @@ import {
   CubeIcon,
   Cog6ToothIcon,
   EyeIcon,
+  UserIcon,
 } from '@heroicons/react/24/solid';
-import { UserIcon } from '@heroicons/react/24/solid';
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
 import { DatabaseIcon, BoxIcon } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';

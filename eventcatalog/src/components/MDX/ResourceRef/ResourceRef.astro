@@ -49,8 +49,8 @@ const collection = resourceToCollectionMap[type as keyof typeof resourceToCollec
 const typeStyles: Record<string, { borderColor: string; label: string }> = {
   entity: { borderColor: 'var(--ec-badge-entity-text)', label: 'Entity' }, // yellow
   policy: { borderColor: 'var(--ec-badge-policy-text)', label: 'Policy' }, // violet
-  view: { borderColor: 'var(--ec-badge-design-text)', label: 'View' }, // green/teal
-  actor: { borderColor: 'var(--ec-badge-event-text)', label: 'Actor' }, // amber
+  view: { borderColor: 'var(--ec-badge-view-text)', label: 'View' }, // green/teal
+  actor: { borderColor: 'var(--ec-badge-actor-text)', label: 'Actor' }, // amber
   service: { borderColor: 'var(--ec-badge-service-text)', label: 'Service' }, // pink
   event: { borderColor: 'var(--ec-badge-event-text)', label: 'Event' }, // amber/orange
   command: { borderColor: 'var(--ec-badge-command-text)', label: 'Command' }, // pink

@@ -1,8 +1,9 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
-import path from 'path';
+import path from 'node:path';
 import utils from '@eventcatalog/sdk';
 import { createVersionedMap, satisfies, findInMap } from './util';
+import { getViewsInformingActor } from '@utils/collections/views';
 
 const CACHE_ENABLED = process.env.DISABLE_EVENTCATALOG_CACHE !== 'true';
 
@@ -12,6 +13,7 @@ export type Actor = Omit<CollectionEntry<'actors'>, 'data'> & {
     latestVersion?: string;
     reads?: CollectionEntry<'views'>[];
     issues?: CollectionEntry<'commands'>[];
+    informedByViews?: CollectionEntry<'views'>[];
     readsRaw?: Array<{ id: string; version?: string }>;
     issuesRaw?: Array<{ id: string; version?: string }>;
   };
@@ -73,6 +75,12 @@ export const getActors = async ({ getAllVersions = true }: Props = {}): Promise<
       const readsRaw = actor.data.reads || [];
       const issuesRaw = actor.data.issues || [];
 
+      // Reverse lookup: views that declare they inform this actor (deduplicated against reads)
+      const readsIds = new Set(reads.map((v) => `${v.data.id}:${v.data.version}`));
+      const informedByViews = getViewsInformingActor(allViews, actor).filter(
+        (v) => !readsIds.has(`${v.data.id}:${v.data.version}`)
+      );
+
       const folderName = await getResourceFolderName(
         process.env.PROJECT_DIR ?? '',
         actor.data.id,
@@ -88,6 +96,7 @@ export const getActors = async ({ getAllVersions = true }: Props = {}): Promise<
           latestVersion,
           reads,
           issues,
+          informedByViews,
           readsRaw,
           issuesRaw,
         },

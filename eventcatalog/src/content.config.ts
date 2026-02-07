@@ -704,16 +704,6 @@ const views = defineCollection({
     .object({
       subscribes: z.array(pointer).optional(),
       informs: z.array(pointer).optional(),
-      auth: z.enum(['anonymous', 'required']).optional(),
-      domain: z.string().optional(),
-      sources: z
-        .array(
-          z.object({
-            domain: z.string(),
-            data: z.array(z.string()),
-          })
-        )
-        .optional(),
       domains: z.array(reference('domains')).optional(),
       detailsPanel: z
         .object({
