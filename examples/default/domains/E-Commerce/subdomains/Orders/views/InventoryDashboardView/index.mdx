@@ -1,0 +1,33 @@
+---
+id: InventoryDashboardView
+name: Inventory Dashboard View
+version: 1.0.0
+summary: Read model showing current inventory levels across warehouses.
+owners:
+  - dboyne
+subscribes:
+  - id: InventoryAdjusted
+    version: "1.0.1"
+informs:
+  - id: WarehouseManager
+    version: "1.0.0"
+---
+
+import Footer from '@catalog/components/footer.astro';
+
+## Overview
+
+The Inventory Dashboard View aggregates inventory adjustment events into a real-time projection of stock levels across all warehouses, enabling warehouse managers to make informed restocking decisions.
+
+## Data Shape
+
+| Field | Source Event | Description |
+|-------|-------------|-------------|
+| productId | InventoryAdjusted | Product identifier |
+| warehouseId | InventoryAdjusted | Warehouse location |
+| currentStock | InventoryAdjusted | Computed current stock level |
+| lastAdjusted | InventoryAdjusted | Last adjustment timestamp |
+
+<NodeGraph />
+
+<Footer />

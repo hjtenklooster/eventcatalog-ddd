@@ -31,6 +31,8 @@ export class Page extends HybridPage {
       'data-products',
       'entities',
       'policies',
+      'views',
+      'actors',
     ];
     const allItems = await Promise.all(itemTypes.map((type) => loaders[type]()));
 

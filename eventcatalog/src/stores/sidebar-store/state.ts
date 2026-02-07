@@ -10,6 +10,8 @@ import { getDiagrams } from '@utils/collections/diagrams';
 import { getDataProducts } from '@utils/collections/data-products';
 import { getEntities } from '@utils/collections/entities';
 import { getPolicies } from '@utils/collections/policies';
+import { getViews } from '@utils/collections/views';
+import { getActors } from '@utils/collections/actors';
 import { buildUrl } from '@utils/url-builder';
 import type { NavigationData, NavNode, ChildRef } from './builders/shared';
 import { buildDomainNode } from './builders/domain';
@@ -20,6 +22,8 @@ import { buildFlowNode } from './builders/flow';
 import { buildDataProductNode } from './builders/data-product';
 import { buildEntityNode } from './builders/entity';
 import { buildPolicyNode } from './builders/policy';
+import { buildViewNode } from './builders/view';
+import { buildActorNode } from './builders/actor';
 import config from '@config';
 import { getDesigns } from '@utils/collections/designs';
 import { getChannels } from '@utils/collections/channels';
@@ -51,6 +55,8 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     dataProducts,
     entities,
     policies,
+    views,
+    actors,
   ] = await Promise.all([
     getDomains({ getAllVersions: false, includeServicesInSubdomains: false }),
     getServices({ getAllVersions: false }),
@@ -65,6 +71,8 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     getDataProducts({ getAllVersions: false }),
     getEntities({ getAllVersions: false }),
     getPolicies({ getAllVersions: false }),
+    getViews({ getAllVersions: false }),
+    getActors({ getAllVersions: false }),
   ]);
 
   // Calculate derived lists to avoid extra fetches
@@ -83,6 +91,8 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     containers,
     diagrams,
     dataProducts,
+    views,
+    actors,
   };
 
   // Process all domains with their owners first (async)
@@ -145,6 +155,26 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
       const owners = await Promise.all(ownersInPolicy.map((owner) => getOwner(owner)));
       const filteredOwners = owners.filter((o) => o !== undefined) as Array<NonNullable<(typeof owners)[0]>>;
       return { policy, owners: filteredOwners };
+    })
+  );
+
+  // Views with owners
+  const viewsWithOwners = await Promise.all(
+    views.map(async (view) => {
+      const ownersInView = view.data.owners || [];
+      const owners = await Promise.all(ownersInView.map((owner) => getOwner(owner)));
+      const filteredOwners = owners.filter((o) => o !== undefined) as Array<NonNullable<(typeof owners)[0]>>;
+      return { view, owners: filteredOwners };
+    })
+  );
+
+  // Actors with owners
+  const actorsWithOwners = await Promise.all(
+    actors.map(async (actor) => {
+      const ownersInActor = actor.data.owners || [];
+      const owners = await Promise.all(ownersInActor.map((owner) => getOwner(owner)));
+      const filteredOwners = owners.filter((o) => o !== undefined) as Array<NonNullable<(typeof owners)[0]>>;
+      return { actor, owners: filteredOwners };
     })
   );
 
@@ -258,6 +288,32 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
       acc[versionedKey] = buildPolicyNode(policy, owners, context);
       if (policy.data.latestVersion === policy.data.version) {
         acc[`policy:${policy.data.id}`] = versionedKey;
+      }
+      return acc;
+    },
+    {} as Record<string, NavNode | string>
+  );
+
+  // View nodes for sidebar
+  const viewNodes = viewsWithOwners.reduce(
+    (acc, { view, owners }) => {
+      const versionedKey = `view:${view.data.id}:${view.data.version}`;
+      acc[versionedKey] = buildViewNode(view, owners, context);
+      if (view.data.latestVersion === view.data.version) {
+        acc[`view:${view.data.id}`] = versionedKey;
+      }
+      return acc;
+    },
+    {} as Record<string, NavNode | string>
+  );
+
+  // Actor nodes for sidebar
+  const actorNodes = actorsWithOwners.reduce(
+    (acc, { actor, owners }) => {
+      const versionedKey = `actor:${actor.data.id}:${actor.data.version}`;
+      acc[versionedKey] = buildActorNode(actor, owners, context);
+      if (actor.data.latestVersion === actor.data.version) {
+        acc[`actor:${actor.data.id}`] = versionedKey;
       }
       return acc;
     },
@@ -404,6 +460,20 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     pages: policies.map((policy) => `policy:${policy.data.id}:${policy.data.version}`),
   });
 
+  const viewsList = createLeaf(views, {
+    type: 'item',
+    title: 'Views',
+    icon: 'Eye',
+    pages: views.map((view) => `view:${view.data.id}:${view.data.version}`),
+  });
+
+  const actorsList = createLeaf(actors, {
+    type: 'item',
+    title: 'Actors',
+    icon: 'User',
+    pages: actors.map((actor) => `actor:${actor.data.id}:${actor.data.version}`),
+  });
+
   const designsList = createLeaf(designs, {
     type: 'item',
     title: 'Designs',
@@ -472,6 +542,8 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     { key: 'list:services', node: servicesList },
     { key: 'list:entities', node: entitiesList },
     { key: 'list:policies', node: policiesList },
+    { key: 'list:views', node: viewsList },
+    { key: 'list:actors', node: actorsList },
     { key: 'list:messages', node: messagesList },
     { key: 'list:channels', node: channelList },
     { key: 'list:flows', node: flowsList },
@@ -498,6 +570,8 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     ...(servicesList ? { 'list:services': servicesList } : {}),
     ...(entitiesList ? { 'list:entities': entitiesList } : {}),
     ...(policiesList ? { 'list:policies': policiesList } : {}),
+    ...(viewsList ? { 'list:views': viewsList } : {}),
+    ...(actorsList ? { 'list:actors': actorsList } : {}),
     ...(eventsList ? { 'list:events': eventsList } : {}),
     ...(commandsList ? { 'list:commands': commandsList } : {}),
     ...(queriesList ? { 'list:queries': queriesList } : {}),
@@ -542,6 +616,8 @@ export const getNestedSideBarData = async (): Promise<NavigationData> => {
     ...dataProductNodes,
     ...entityNodes,
     ...policyNodes,
+    ...viewNodes,
+    ...actorNodes,
     ...flowNodes,
     ...userNodes,
     ...teamNodes,

@@ -21,6 +21,8 @@ const containers = await getCollection('containers');
 
 const entities = await getCollection('entities');
 const policies = await getCollection('policies');
+const views = await getCollection('views');
+const actors = await getCollection('actors');
 
 const customDocs = await getCollection('customPages');
 
@@ -101,6 +103,37 @@ const renderPolicies = (baseUrl: string) => {
     .join('\n');
 };
 
+// render the views from the domain list
+const renderViews = (baseUrl: string) => {
+  const domainsWithViews = domains.filter((domain) => domain.data.views?.length && domain.data.views.length > 0);
+
+  if (domainsWithViews.length === 0) {
+    return '';
+  }
+
+  return domainsWithViews
+    .map((domain) => {
+      const viewsList = domain.data.views
+        ?.map((view) => {
+          const viewItem = views.find((v) => v.data.id === view.id);
+          if (!viewItem) return null;
+          return `    - [${viewItem.data.name}](${baseUrl}/docs/views/${viewItem.data.id}/${viewItem.data.version}.mdx) - ${viewItem.data.summary}`;
+        })
+        .filter(Boolean)
+        .join('\n');
+      return `- ${domain.data.name} Domain\n${viewsList || ''}`;
+    })
+    .join('\n');
+};
+
+// render actors as a flat list (actors are not domain-grouped)
+const renderActors = (baseUrl: string) => {
+  if (actors.length === 0) return '';
+  return actors
+    .map((a) => `- [${a.data.name}](${baseUrl}/docs/actors/${a.data.id}/${a.data.version}.mdx) - ${a.data.summary}`)
+    .join('\n');
+};
+
 export const GET: APIRoute = async ({ params, request }) => {
   const url = new URL(request.url);
   const baseUrl = process.env.LLMS_TXT_BASE_URL || `${url.origin}`;
@@ -144,6 +177,10 @@ export const GET: APIRoute = async ({ params, request }) => {
     renderEntities(baseUrl),
     '\n## Policies',
     renderPolicies(baseUrl),
+    '\n## Views',
+    renderViews(baseUrl),
+    '\n## Actors',
+    renderActors(baseUrl),
     '\n## Teams',
     teams.map((item) => formatSimpleItem(item, 'teams')).join('\n'),
     '\n## Users',

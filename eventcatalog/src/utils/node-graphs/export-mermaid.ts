@@ -34,6 +34,7 @@ const NODE_SHAPE_MAP: Record<string, [string, string]> = {
   step: ['[', ']'], // rectangle
   user: ['((', '))'], // circle
   actor: ['((', '))'], // circle
+  actors: ['((', '))'], // circle
   externalSystem: ['[[', ']]'], // stadium
   'external-system': ['[[', ']]'],
   data: ['[(', ')]'], // cylinder (database)
@@ -45,6 +46,7 @@ const NODE_SHAPE_MAP: Record<string, [string, string]> = {
   policy: ['[', ']'],
   custom: ['[', ']'], // rectangle
   view: ['[', ']'], // rectangle
+  views: ['[', ']'], // rectangle
   note: ['[', ']'], // rectangle
 };
 
@@ -69,6 +71,7 @@ const NODE_STYLE_CLASSES: Record<string, string> = {
   step: 'fill:#374151,stroke:#1f2937,color:#fff',
   user: 'fill:#8b5cf6,stroke:#6d28d9,color:#fff',
   actor: 'fill:#eab308,stroke:#a16207,color:#000',
+  actors: 'fill:#eab308,stroke:#a16207,color:#000',
   externalSystem: 'fill:#ec4899,stroke:#be185d,color:#fff',
   'external-system': 'fill:#ec4899,stroke:#be185d,color:#fff',
   data: 'fill:#3b82f6,stroke:#1d4ed8,color:#fff',
@@ -79,7 +82,8 @@ const NODE_STYLE_CLASSES: Record<string, string> = {
   policies: 'fill:#7C3AED,stroke:#6D28D9,color:#fff',
   policy: 'fill:#7C3AED,stroke:#6D28D9,color:#fff',
   custom: 'fill:#9ca3af,stroke:#6b7280,color:#000',
-  view: 'fill:#9ca3af,stroke:#6b7280,color:#000',
+  view: 'fill:#66CC66,stroke:#4A9B4A,color:#000',
+  views: 'fill:#66CC66,stroke:#4A9B4A,color:#000',
   note: 'fill:#fef3c7,stroke:#d97706,color:#000',
 };
 
@@ -177,7 +181,21 @@ export function getNodeLabel(node: Node): string {
     return step?.title || step?.name || step?.id || node.id;
   }
 
-  if (type === 'user' || type === 'actor') {
+  if (type === 'view' || type === 'views') {
+    const view = (data as any).view;
+    const name = view?.name || view?.id || node.id;
+    const version = view?.data?.version || view?.version;
+    return formatLabelWithVersion(name, version);
+  }
+
+  if (type === 'actor' || type === 'actors') {
+    const actor = (data as any).actor;
+    const name = actor?.name || actor?.id || node.id;
+    const version = actor?.data?.version || actor?.version;
+    return formatLabelWithVersion(name, version);
+  }
+
+  if (type === 'user') {
     return (data as any).name || (data as any).label || (data as any).id || node.id;
   }
 

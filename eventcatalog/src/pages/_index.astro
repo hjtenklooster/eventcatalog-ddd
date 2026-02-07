@@ -17,8 +17,10 @@ import { getServices } from '@utils/collections/services';
 import { getFlows } from '@utils/collections/flows';
 import { getEntities } from '@utils/collections/entities';
 import { getPolicies } from '@utils/collections/policies';
+import { getViews } from '@utils/collections/views';
+import { getActors } from '@utils/collections/actors';
 import VerticalSideBarLayout from '@layouts/VerticalSideBarLayout.astro';
-import { BookOpenText, Workflow, TableProperties, BookUser, Zap, Terminal, Code2, FileJson, Box, Cog } from 'lucide-react';
+import { BookOpenText, Workflow, TableProperties, BookUser, Zap, Terminal, Code2, FileJson, Box, Cog, Eye, User } from 'lucide-react';
 
 const { commands = [], events = [], queries = [] } = await getMessages({ getAllVersions: false });
 const messages = [...events, ...queries, ...commands];
@@ -27,6 +29,8 @@ const services = await getServices({ getAllVersions: false });
 const flows = await getFlows({ getAllVersions: false });
 const entities = await getEntities({ getAllVersions: false });
 const policies = await getPolicies({ getAllVersions: false });
+const views = await getViews({ getAllVersions: false });
+const actors = await getActors({ getAllVersions: false });
 
 // Check if catalog has content
 const hasContent =
@@ -35,7 +39,9 @@ const hasContent =
   messages.length > 0 ||
   flows.length > 0 ||
   entities.length > 0 ||
-  policies.length > 0;
+  policies.length > 0 ||
+  views.length > 0 ||
+  actors.length > 0;
 
 const getDefaultUrl = (route: string, defaultValue: string) => {
   if (domains.length > 0) return buildUrl(`/${route}/domains/${domains[0].data.id}/${domains[0].data.latestVersion}`);
@@ -43,6 +49,8 @@ const getDefaultUrl = (route: string, defaultValue: string) => {
   if (flows.length > 0) return buildUrl(`/${route}/flows/${flows[0].data.id}/${flows[0].data.latestVersion}`);
   if (entities.length > 0) return buildUrl(`/${route}/entities/${entities[0].data.id}/${entities[0].data.latestVersion}`);
   if (policies.length > 0) return buildUrl(`/${route}/policies/${policies[0].data.id}/${policies[0].data.latestVersion}`);
+  if (views.length > 0) return buildUrl(`/${route}/views/${views[0].data.id}/${views[0].data.latestVersion}`);
+  if (actors.length > 0) return buildUrl(`/${route}/actors/${actors[0].data.id}/${actors[0].data.latestVersion}`);
   return buildUrl(defaultValue);
 };
 
@@ -117,6 +125,30 @@ const topTiles = [
     borderColor: 'border-violet-200',
     textColor: 'text-violet-600',
     emptyText: 'No policies yet',
+    addHref: 'https://www.eventcatalog.dev/docs/getting-started',
+  },
+  {
+    title: 'Views',
+    count: views.length,
+    description: 'Read models',
+    href: buildUrl('/discover/views'),
+    icon: Eye,
+    bgColor: 'bg-green-500',
+    borderColor: 'border-green-200',
+    textColor: 'text-green-600',
+    emptyText: 'No views yet',
+    addHref: 'https://www.eventcatalog.dev/docs/getting-started',
+  },
+  {
+    title: 'Actors',
+    count: actors.length,
+    description: 'Human roles',
+    href: buildUrl('/discover/actors'),
+    icon: User,
+    bgColor: 'bg-amber-500',
+    borderColor: 'border-amber-200',
+    textColor: 'text-amber-600',
+    emptyText: 'No actors yet',
     addHref: 'https://www.eventcatalog.dev/docs/getting-started',
   },
 ];

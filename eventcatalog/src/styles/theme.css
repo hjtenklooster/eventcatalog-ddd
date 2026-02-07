@@ -109,6 +109,10 @@
   --ec-badge-entity-text: 161 98 7; /* yellow-700 */
   --ec-badge-policy-bg: 237 233 254; /* violet-100 */
   --ec-badge-policy-text: 109 40 217; /* violet-700 */
+  --ec-badge-view-bg: 220 252 231; /* green-100 */
+  --ec-badge-view-text: 21 128 61; /* green-700 */
+  --ec-badge-actor-bg: 254 243 199; /* amber-100 */
+  --ec-badge-actor-text: 180 83 9; /* amber-700 */
   --ec-badge-default-bg: 243 244 246; /* gray-100 */
   --ec-badge-default-text: 75 85 99; /* gray-600 */
 }
@@ -211,6 +215,10 @@
   --ec-badge-entity-text: 253 224 71; /* yellow-300 */
   --ec-badge-policy-bg: 76 29 149 / 0.3; /* violet-900/30 */
   --ec-badge-policy-text: 196 181 253; /* violet-300 */
+  --ec-badge-view-bg: 20 83 45 / 0.3; /* green-900/30 */
+  --ec-badge-view-text: 134 239 172; /* green-300 */
+  --ec-badge-actor-bg: 120 53 15 / 0.3; /* amber-900/30 */
+  --ec-badge-actor-text: 252 211 77; /* amber-300 */
   --ec-badge-default-bg: 63 63 70 / 0.3; /* zinc-700/30 */
   --ec-badge-default-text: 212 212 216; /* zinc-300 */
 }

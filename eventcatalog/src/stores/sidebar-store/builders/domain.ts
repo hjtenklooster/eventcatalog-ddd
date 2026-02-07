@@ -30,6 +30,9 @@ export const buildDomainNode = (domain: CollectionEntry<'domains'>, owners: any[
   const policiesInDomain = domain.data.policies || [];
   const renderPolicies = policiesInDomain.length > 0 && shouldRenderSideBarSection(domain, 'policies');
 
+  const viewsInDomain = domain.data.views || [];
+  const renderViews = viewsInDomain.length > 0 && shouldRenderSideBarSection(domain, 'views');
+
   const domainFlows = domain.data.flows || [];
   const hasFlows = domainFlows.length > 0;
 
@@ -156,6 +159,12 @@ export const buildDomainNode = (domain: CollectionEntry<'domains'>, owners: any[
         title: 'Policies',
         icon: 'Cog',
         pages: policiesInDomain.map((policy) => `policy:${(policy as any).data.id}:${(policy as any).data.version}`),
+      },
+      renderViews && {
+        type: 'group',
+        title: 'Views',
+        icon: 'Eye',
+        pages: viewsInDomain.map((view) => `view:${(view as any).data.id}:${(view as any).data.version}`),
       },
 
       ...(hasResourceGroups ? buildResourceGroupSections(resourceGroups, context) : []),

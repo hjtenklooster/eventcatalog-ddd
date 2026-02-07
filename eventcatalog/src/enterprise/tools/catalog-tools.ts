@@ -20,6 +20,8 @@ import { getNodesAndEdges as getNodesAndEdgesForFlows } from '@utils/node-graphs
 import { getNodesAndEdges as getNodesAndEdgesForDataProduct } from '@utils/node-graphs/data-products-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForContainer } from '@utils/node-graphs/container-node-graph';
 import { getNodesAndEdges as getNodesAndEdgesForPolicy } from '@utils/node-graphs/policy-node-graph';
+import { getNodesAndEdges as getNodesAndEdgesForView } from '@utils/node-graphs/view-node-graph';
+import { getNodesAndEdges as getNodesAndEdgesForActor } from '@utils/node-graphs/actor-node-graph';
 import { convertToMermaid } from '@utils/node-graphs/export-mermaid';
 import config from '@config';
 
@@ -105,6 +107,8 @@ export const collectionSchema = z.enum([
   'channels',
   'entities',
   'policies',
+  'views',
+  'actors',
   'containers',
   'diagrams',
   'data-products',
@@ -135,6 +139,8 @@ export const visualiserCollectionSchema = z.enum([
   'containers',
   'data-products',
   'policies',
+  'views',
+  'actors',
 ]);
 
 // ============================================
@@ -248,6 +254,8 @@ export async function findResourcesByOwner(params: { ownerId: string }) {
     'channels',
     'entities',
     'policies',
+    'views',
+    'actors',
     'data-products',
   ] as const;
 
@@ -917,6 +925,8 @@ const getNodesAndEdgesFunctions = {
   containers: getNodesAndEdgesForContainer,
   'data-products': getNodesAndEdgesForDataProduct,
   policies: getNodesAndEdgesForPolicy,
+  views: getNodesAndEdgesForView,
+  actors: getNodesAndEdgesForActor,
 };
 
 /**
@@ -981,7 +991,7 @@ export async function getArchitectureDiagramAsMermaid(params: {
 
 export const toolDescriptions = {
   getResources:
-    'Use this tool to get events, services, commands, queries, flows, domains, channels, entities, policies from EventCatalog. Supports pagination via cursor and filtering by search term (searches name, id, and summary).',
+    'Use this tool to get events, services, commands, queries, flows, domains, channels, entities, policies, views, actors from EventCatalog. Supports pagination via cursor and filtering by search term (searches name, id, and summary).',
   getResource: 'Use this tool to get a specific resource from EventCatalog by its id and version',
   getMessagesProducedOrConsumedByResource:
     'Use this tool to get the messages produced or consumed by a resource by its id and version. Look at the `sends` and `receives` properties to get the messages produced or consumed by the resource',

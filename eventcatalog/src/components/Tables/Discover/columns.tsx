@@ -11,6 +11,8 @@ import {
   MapIcon,
   CubeIcon,
   Cog6ToothIcon,
+  EyeIcon,
+  UserIcon,
 } from '@heroicons/react/24/solid';
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
 import { DatabaseIcon, BoxIcon } from 'lucide-react';
@@ -34,6 +36,7 @@ const colorClasses: Record<string, string> = {
   red: 'text-red-500',
   gray: 'text-gray-500',
   cyan: 'text-cyan-500',
+  amber: 'text-amber-500',
 };
 
 // Reusable tooltip wrapper component
@@ -720,6 +723,110 @@ export const getPolicyColumns = (tableConfiguration: TableConfiguration) => [
 ];
 
 // ============================================================================
+// VIEW COLUMNS
+// ============================================================================
+export const getViewColumns = (tableConfiguration: TableConfiguration) => [
+  columnHelper.accessor('data.name', {
+    id: 'name',
+    header: () => <span>{tableConfiguration?.columns?.name?.label || 'View'}</span>,
+    cell: (info) => {
+      const item = info.row.original;
+      const isLatestVersion = item.data.version === item.data.latestVersion;
+      return (
+        <a
+          href={buildUrl(`/docs/${item.collection}/${item.data.id}/${item.data.version}`)}
+          className="group inline-flex items-center gap-2 hover:text-[rgb(var(--ec-accent))] transition-colors"
+        >
+          <EyeIcon className="h-4 w-4 text-green-500 flex-shrink-0" />
+          <span className="text-sm font-semibold text-[rgb(var(--ec-page-text))] group-hover:text-[rgb(var(--ec-accent))]">
+            {item.data.name}
+          </span>
+          {!isLatestVersion && <span className="text-xs text-[rgb(var(--ec-icon-color))]">v{item.data.version}</span>}
+        </a>
+      );
+    },
+    meta: { filterVariant: 'name' },
+  }),
+  createSummaryColumn(tableConfiguration),
+  columnHelper.accessor('data.subscribes', {
+    id: 'subscribes',
+    header: () => (
+      <span className="flex items-center gap-1">
+        <ArrowDownIcon className="w-3.5 h-3.5" />
+        Subscribes
+      </span>
+    ),
+    cell: (info) => <CollectionListCell items={info.getValue()} />,
+    meta: { showFilter: false },
+  }),
+  columnHelper.accessor('data.informs', {
+    id: 'informs',
+    header: () => (
+      <span className="flex items-center gap-1">
+        <ArrowUpIcon className="w-3.5 h-3.5" />
+        Informs
+      </span>
+    ),
+    cell: (info) => <CollectionListCell items={info.getValue()} />,
+    meta: { showFilter: false },
+  }),
+  createBadgesColumn(tableConfiguration),
+  createActionsColumn('views', tableConfiguration),
+];
+
+// ============================================================================
+// ACTOR COLUMNS
+// ============================================================================
+export const getActorColumns = (tableConfiguration: TableConfiguration) => [
+  columnHelper.accessor('data.name', {
+    id: 'name',
+    header: () => <span>{tableConfiguration?.columns?.name?.label || 'Actor'}</span>,
+    cell: (info) => {
+      const item = info.row.original;
+      const isLatestVersion = item.data.version === item.data.latestVersion;
+      return (
+        <a
+          href={buildUrl(`/docs/${item.collection}/${item.data.id}/${item.data.version}`)}
+          className="group inline-flex items-center gap-2 hover:text-[rgb(var(--ec-accent))] transition-colors"
+        >
+          <UserIcon className="h-4 w-4 text-amber-500 flex-shrink-0" />
+          <span className="text-sm font-semibold text-[rgb(var(--ec-page-text))] group-hover:text-[rgb(var(--ec-accent))]">
+            {item.data.name}
+          </span>
+          {!isLatestVersion && <span className="text-xs text-[rgb(var(--ec-icon-color))]">v{item.data.version}</span>}
+        </a>
+      );
+    },
+    meta: { filterVariant: 'name' },
+  }),
+  createSummaryColumn(tableConfiguration),
+  columnHelper.accessor('data.reads', {
+    id: 'reads',
+    header: () => (
+      <span className="flex items-center gap-1">
+        <ArrowDownIcon className="w-3.5 h-3.5" />
+        Reads
+      </span>
+    ),
+    cell: (info) => <CollectionListCell items={info.getValue()} />,
+    meta: { showFilter: false },
+  }),
+  columnHelper.accessor('data.issues', {
+    id: 'issues',
+    header: () => (
+      <span className="flex items-center gap-1">
+        <ArrowUpIcon className="w-3.5 h-3.5" />
+        Issues
+      </span>
+    ),
+    cell: (info) => <CollectionListCell items={info.getValue()} />,
+    meta: { showFilter: false },
+  }),
+  createBadgesColumn(tableConfiguration),
+  createActionsColumn('actors', tableConfiguration),
+];
+
+// ============================================================================
 // COLUMN GETTER BY COLLECTION TYPE
 // ============================================================================
 export const getDiscoverColumns = (collectionType: CollectionType, tableConfiguration: TableConfiguration) => {
@@ -744,6 +851,10 @@ export const getDiscoverColumns = (collectionType: CollectionType, tableConfigur
       return getEntityColumns(tableConfiguration);
     case 'policies':
       return getPolicyColumns(tableConfiguration);
+    case 'views':
+      return getViewColumns(tableConfiguration);
+    case 'actors':
+      return getActorColumns(tableConfiguration);
     default:
       return [];
   }

@@ -8,6 +8,8 @@ export type CollectionTypes =
   | 'channels'
   | 'entities'
   | 'policies'
+  | 'views'
+  | 'actors'
   | 'containers'
   | 'diagrams'
   | 'data-products';
@@ -23,6 +25,8 @@ export type PageTypes =
   | 'flows'
   | 'entities'
   | 'policies'
+  | 'views'
+  | 'actors'
   | 'containers'
   | 'diagrams'
   | 'data-products';

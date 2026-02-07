@@ -28,7 +28,9 @@ export type CollectionType =
   | 'containers'
   | 'data-products'
   | 'entities'
-  | 'policies';
+  | 'policies'
+  | 'views'
+  | 'actors';
 
 export interface DiscoverTableData {
   collection: string;
@@ -64,6 +66,10 @@ export interface DiscoverTableData {
     servicesThatReadFromContainer?: Array<any>;
     inputs?: Array<any>;
     outputs?: Array<any>;
+    subscribes?: Array<any>;
+    informs?: Array<any>;
+    reads?: Array<any>;
+    issues?: Array<any>;
   };
 }
 

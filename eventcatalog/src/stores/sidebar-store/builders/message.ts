@@ -44,12 +44,20 @@ export const buildMessageNode = (
   const triggeredPolicies = (message.data as any).triggeredPolicies || [];
   const dispatchingPolicies = (message.data as any).dispatchingPolicies || [];
 
+  // View/Actor relationships
+  const subscribedByViews = (message.data as any).subscribedByViews || [];
+  const issuedByActors = (message.data as any).issuedByActors || [];
+
   const renderProducers = producers.length > 0 && shouldRenderSideBarSection(message, 'producers');
   const renderConsumers = consumers.length > 0 && shouldRenderSideBarSection(message, 'consumers');
   const renderTriggeredPolicies =
     collection === 'events' && triggeredPolicies.length > 0 && shouldRenderSideBarSection(message, 'triggeredPolicies');
   const renderDispatchingPolicies =
     collection === 'commands' && dispatchingPolicies.length > 0 && shouldRenderSideBarSection(message, 'dispatchingPolicies');
+  const renderSubscribedByViews =
+    collection === 'events' && subscribedByViews.length > 0 && shouldRenderSideBarSection(message, 'subscribedByViews');
+  const renderIssuedByActors =
+    collection === 'commands' && issuedByActors.length > 0 && shouldRenderSideBarSection(message, 'issuedByActors');
   const renderRepository = message.data.repository && shouldRenderSideBarSection(message, 'repository');
 
   // Determine badge based on collection type
@@ -146,6 +154,22 @@ export const buildMessageNode = (
         icon: 'Cog',
         pages: (dispatchingPolicies as CollectionEntry<'policies'>[]).map((policy) => {
           return `policy:${policy.data.id}:${policy.data.version}`;
+        }),
+      },
+      renderSubscribedByViews && {
+        type: 'group',
+        title: 'Subscribed By Views',
+        icon: 'Eye',
+        pages: (subscribedByViews as CollectionEntry<'views'>[]).map((view) => {
+          return `view:${view.data.id}:${view.data.version}`;
+        }),
+      },
+      renderIssuedByActors && {
+        type: 'group',
+        title: 'Issued By Actors',
+        icon: 'User',
+        pages: (issuedByActors as CollectionEntry<'actors'>[]).map((actor) => {
+          return `actor:${actor.data.id}:${actor.data.version}`;
         }),
       },
       renderOwners && buildOwnersSection(owners),

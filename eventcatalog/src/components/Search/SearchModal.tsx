@@ -22,6 +22,7 @@ import {
   Square2StackIcon,
   ArrowsRightLeftIcon,
   Cog6ToothIcon,
+  EyeIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid, CircleStackIcon } from '@heroicons/react/24/solid';
 import { useStore } from '@nanostores/react';
@@ -38,6 +39,8 @@ const typeIcons: any = {
   Query: QueryIcon,
   Entity: CubeIcon,
   Policy: Cog6ToothIcon,
+  View: EyeIcon,
+  Actor: UserIcon,
   Channel: ArrowsRightLeftIcon,
   Team: UserGroupIcon,
   User: UserIcon,
@@ -57,6 +60,8 @@ const typeColors: any = {
   Query: 'text-green-500 dark:text-green-400 bg-green-50 dark:bg-green-500/10 ring-green-200 dark:ring-green-500/30',
   Entity: 'text-yellow-500 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 ring-yellow-200 dark:ring-yellow-500/30',
   Policy: 'text-violet-500 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 ring-violet-200 dark:ring-violet-500/30',
+  View: 'text-green-500 dark:text-green-400 bg-green-50 dark:bg-green-500/10 ring-green-200 dark:ring-green-500/30',
+  Actor: 'text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 ring-amber-200 dark:ring-amber-500/30',
   Channel: 'text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 ring-indigo-200 dark:ring-indigo-500/30',
   Team: 'text-teal-500 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10 ring-teal-200 dark:ring-teal-500/30',
   User: 'text-cyan-500 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 ring-cyan-200 dark:ring-cyan-500/30',
@@ -93,7 +98,7 @@ const getUrlForItem = (node: any, key: string) => {
 
   // Pluralize type for URL if needed
   let pluralType = type;
-  if (['event', 'command', 'domain', 'service', 'flow', 'container', 'channel'].includes(type)) {
+  if (['event', 'command', 'domain', 'service', 'flow', 'container', 'channel', 'view', 'actor'].includes(type)) {
     pluralType = type + 's';
   } else if (type === 'query') {
     pluralType = 'queries';

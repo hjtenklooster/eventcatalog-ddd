@@ -6,6 +6,8 @@ import {
   ChatBubbleLeftIcon,
   CubeIcon,
   Cog6ToothIcon,
+  EyeIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 import ServerIcon from '@heroicons/react/24/outline/ServerIcon';
 import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
@@ -20,6 +22,8 @@ import { getContainers } from '@utils/collections/containers';
 import { getDataProducts } from '@utils/collections/data-products';
 import { getEntities } from '@utils/collections/entities';
 import { getPolicies } from '@utils/collections/policies';
+import { getViews } from '@utils/collections/views';
+import { getActors } from '@utils/collections/actors';
 import { getUsers } from '@utils/collections/users';
 import { getTeams } from '@utils/collections/teams';
 import { getChannels } from '@utils/collections/channels';
@@ -45,6 +49,8 @@ const containers = await getContainers();
 const dataProducts = await getDataProducts();
 const entities = await getEntities();
 const policies = await getPolicies();
+const views = await getViews();
+const actors = await getActors();
 const channels = await getChannels();
 const users = await getUsers();
 const teams = await getTeams();
@@ -142,6 +148,20 @@ const typeConfig: Record<
   },
   policies: {
     label: 'Policies',
+    propertyOptions: [
+      { id: 'hasOwners', label: 'Has Owners' },
+      { id: 'isDeprecated', label: 'Is Deprecated' },
+    ],
+  },
+  views: {
+    label: 'Views',
+    propertyOptions: [
+      { id: 'hasOwners', label: 'Has Owners' },
+      { id: 'isDeprecated', label: 'Is Deprecated' },
+    ],
+  },
+  actors: {
+    label: 'Actors',
     propertyOptions: [
       { id: 'hasOwners', label: 'Has Owners' },
       { id: 'isDeprecated', label: 'Is Deprecated' },
@@ -245,6 +265,24 @@ const tabs = [
     enabled: policies.length > 0,
     visible: policies.length > 0,
   },
+  {
+    label: `Views (${views.length})`,
+    href: buildUrl('/discover/views'),
+    isActive: type === 'views',
+    icon: EyeIcon,
+    activeColor: 'green',
+    enabled: views.length > 0,
+    visible: views.length > 0,
+  },
+  {
+    label: `Actors (${actors.length})`,
+    href: buildUrl('/discover/actors'),
+    isActive: type === 'actors',
+    icon: UserIcon,
+    activeColor: 'amber',
+    enabled: actors.length > 0,
+    visible: actors.length > 0,
+  },
 ];
 
 // Map data to match the expected structure for the table
@@ -299,6 +337,8 @@ const allCollections = [
   ...dataProducts.map((dp) => ({ ...dp, collection: 'data-products' })),
   ...entities.map((e) => ({ ...e, collection: 'entities' })),
   ...policies.map((p) => ({ ...p, collection: 'policies' })),
+  ...views.map((v) => ({ ...v, collection: 'views' })),
+  ...actors.map((a) => ({ ...a, collection: 'actors' })),
 ];
 
 // Create a map for quick lookup by collection:id (composite key to avoid collisions)
@@ -318,6 +358,8 @@ function resolvePointer(pointer: { id: string; version?: string }) {
     'data-products',
     'entities',
     'policies',
+    'views',
+    'actors',
   ];
   let item = null;
   for (const collectionType of collectionTypes) {
@@ -387,6 +429,10 @@ const tableData = enrichedData.map((d: any) => ({
     consumers: d.data?.consumers?.map(mapToItem) ?? [],
     receives: d.data?.receives?.map(mapToItem) ?? [],
     sends: d.data?.sends?.map(mapToItem) ?? [],
+    subscribes: d.data?.subscribes?.map(mapToItem) ?? [],
+    informs: d.data?.informs?.map(mapToItem) ?? [],
+    reads: d.data?.reads?.map(mapToItem) ?? [],
+    issues: d.data?.issues?.map(mapToItem) ?? [],
     services: d.data?.services?.map(mapToItem) ?? [],
     servicesThatWriteToContainer: d.data?.servicesThatWriteToContainer?.map(mapToItem) ?? [],
     servicesThatReadFromContainer: d.data?.servicesThatReadFromContainer?.map(mapToItem) ?? [],
