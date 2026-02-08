@@ -56,8 +56,8 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
     getCollection('queries'),
     getCollection('channels'),
     getCollection('policies'),
-    getCollection('views'),
-    getCollection('actors'),
+    getCollection('views').then((r) => r.filter((v) => v.data.hidden !== true)),
+    getCollection('actors').then((r) => r.filter((a) => a.data.hidden !== true)),
   ]);
 
   const allMessages = [...events, ...commands, ...queries];

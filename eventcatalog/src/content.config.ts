@@ -709,6 +709,7 @@ const views = defineCollection({
         .object({
           domains: detailPanelPropertySchema.optional(),
           messages: detailPanelPropertySchema.optional(),
+          actors: detailPanelPropertySchema.optional(),
           versions: detailPanelPropertySchema.optional(),
           owners: detailPanelPropertySchema.optional(),
           changelog: detailPanelPropertySchema.optional(),
@@ -733,6 +734,8 @@ const actors = defineCollection({
       issues: z.array(pointer).optional(),
       detailsPanel: z
         .object({
+          views: detailPanelPropertySchema.optional(),
+          commands: detailPanelPropertySchema.optional(),
           versions: detailPanelPropertySchema.optional(),
           owners: detailPanelPropertySchema.optional(),
           changelog: detailPanelPropertySchema.optional(),

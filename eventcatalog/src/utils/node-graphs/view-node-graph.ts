@@ -131,26 +131,8 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
     }
   }
 
-  // Right: actors this view informs + their issued commands + terminal consumers
-  for (const actor of informs) {
-    const actorNodeId = generateIdForNode(actor);
-
-    nodes.push(createNode({
-      id: actorNodeId,
-      type: 'actor',
-      data: { mode, actor: { ...actor.data } },
-      position: { x: 0, y: 0 },
-    }));
-
-    edges.push(createEdge({
-      id: generatedIdForEdge(view, actor),
-      source: viewNodeId,
-      target: actorNodeId,
-      label: 'informs',
-      data: { customColor: getColorFromString(view.data.id) },
-    }));
-
-    // Right expansion: commands this actor issues
+  // Helper: expand an actor's issued commands into nodes/edges with terminal consumers
+  const expandActorCommands = (actor: CollectionEntry<'actors'>, actorNodeId: string) => {
     const actorIssues = actor.data.issues || [];
     for (const issueRef of actorIssues) {
       const command = findInMap(commandMap, issueRef.id, issueRef.version);
@@ -165,7 +147,6 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
         position: { x: 0, y: 0 },
       }));
 
-      // actor --issues--> command
       edges.push(createEdge({
         id: generatedIdForEdge(actor, command),
         source: actorNodeId,
@@ -174,7 +155,7 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
         data: { customColor: getColorFromString(command.data.id) },
       }));
 
-      // Terminal consumers of the command: entities
+      // Terminal consumers: entities
       const cmdEntityConsumers = getEntityConsumersOfMessage(entities, command);
       for (const ec of cmdEntityConsumers) {
         const ecId = generateIdForNode(ec);
@@ -194,7 +175,7 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
         }));
       }
 
-      // Terminal consumers of the command: services
+      // Terminal consumers: services
       const cmdServiceConsumers = getConsumersOfMessage(services, command);
       for (const sc of cmdServiceConsumers) {
         const scId = generateIdForNode(sc);
@@ -214,6 +195,28 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
         }));
       }
     }
+  };
+
+  // Right: actors this view informs + their issued commands + terminal consumers
+  for (const actor of informs) {
+    const actorNodeId = generateIdForNode(actor);
+
+    nodes.push(createNode({
+      id: actorNodeId,
+      type: 'actor',
+      data: { mode, actor: { ...actor.data } },
+      position: { x: 0, y: 0 },
+    }));
+
+    edges.push(createEdge({
+      id: generatedIdForEdge(view, actor),
+      source: viewNodeId,
+      target: actorNodeId,
+      label: 'informs',
+      data: { customColor: getColorFromString(view.data.id) },
+    }));
+
+    expandActorCommands(actor, actorNodeId);
   }
 
   // Right: actors that declare they read this view (reverse relationship), excluding those already in informs
@@ -239,70 +242,7 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
       data: { customColor: getColorFromString(view.data.id) },
     }));
 
-    // Right expansion: commands this actor issues
-    const actorIssues = actor.data.issues || [];
-    for (const issueRef of actorIssues) {
-      const command = findInMap(commandMap, issueRef.id, issueRef.version);
-      if (!command) continue;
-
-      const commandNodeId = generateIdForNode(command);
-
-      nodes.push(createNode({
-        id: commandNodeId,
-        type: command.collection,
-        data: { mode, message: { ...command.data } },
-        position: { x: 0, y: 0 },
-      }));
-
-      // actor --issues--> command
-      edges.push(createEdge({
-        id: generatedIdForEdge(actor, command),
-        source: actorNodeId,
-        target: commandNodeId,
-        label: 'issues',
-        data: { customColor: getColorFromString(command.data.id) },
-      }));
-
-      // Terminal consumers of the command: entities
-      const cmdEntityConsumers = getEntityConsumersOfMessage(entities, command);
-      for (const ec of cmdEntityConsumers) {
-        const ecId = generateIdForNode(ec);
-        nodes.push(createNode({
-          id: ecId,
-          type: 'entities',
-          data: { mode, entity: { ...ec.data } },
-          position: { x: 0, y: 0 },
-        }));
-
-        edges.push(createEdge({
-          id: generatedIdForEdge(command, ec),
-          source: commandNodeId,
-          target: ecId,
-          label: 'subscribes to',
-          data: { customColor: getColorFromString(command.data.id) },
-        }));
-      }
-
-      // Terminal consumers of the command: services
-      const cmdServiceConsumers = getConsumersOfMessage(services, command);
-      for (const sc of cmdServiceConsumers) {
-        const scId = generateIdForNode(sc);
-        nodes.push(createNode({
-          id: scId,
-          type: 'services',
-          data: { mode, service: { ...sc.data } },
-          position: { x: 0, y: 0 },
-        }));
-
-        edges.push(createEdge({
-          id: generatedIdForEdge(command, sc),
-          source: commandNodeId,
-          target: scId,
-          label: getEdgeLabelForMessageAsSource(command),
-          data: { customColor: getColorFromString(command.data.id) },
-        }));
-      }
-    }
+    expandActorCommands(actor, actorNodeId);
   }
 
   // Deduplicate

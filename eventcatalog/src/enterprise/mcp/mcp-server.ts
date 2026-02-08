@@ -320,7 +320,7 @@ function createMcpServer() {
     {
       name: 'All Resources in EventCatalog',
       uri: 'eventcatalog://all',
-      description: 'All messages, domains and services in EventCatalog',
+      description: 'All messages, domains, services, views, actors and other resources in EventCatalog',
       collections: ['events', 'commands', 'queries', 'services', 'domains', 'flows', 'channels', 'entities', 'policies', 'views', 'actors'] as const,
     },
     {

@@ -21,6 +21,8 @@ export const buildActorNode = (actor: Actor, owners: any[], context: ResourceGro
   const hasDiagrams = diagramNavItems.length > 0;
 
   const renderVisualiser = isVisualiserEnabled();
+  const renderViews = shouldRenderSideBarSection(actor, 'views');
+  const renderCommands = shouldRenderSideBarSection(actor, 'commands');
   const renderOwners = owners.length > 0 && shouldRenderSideBarSection(actor, 'owners');
   const renderRepository = actor.data.repository && shouldRenderSideBarSection(actor, 'repository');
 
@@ -57,19 +59,21 @@ export const buildActorNode = (actor: Actor, owners: any[], context: ResourceGro
         pages: diagramNavItems,
       },
       // Reads (views this actor reads)
-      readsViews.length > 0 && {
-        type: 'group',
-        title: 'Reads',
-        icon: 'Eye',
-        pages: readsViews.map((view) => `view:${view.data.id}:${view.data.version}`),
-      },
+      readsViews.length > 0 &&
+        renderViews && {
+          type: 'group',
+          title: 'Reads',
+          icon: 'Eye',
+          pages: readsViews.map((view) => `view:${view.data.id}:${view.data.version}`),
+        },
       // Issues (commands this actor issues)
-      issuesCommands.length > 0 && {
-        type: 'group',
-        title: 'Issues',
-        icon: 'Terminal',
-        pages: issuesCommands.map((cmd) => `command:${cmd.data.id}:${cmd.data.version}`),
-      },
+      issuesCommands.length > 0 &&
+        renderCommands && {
+          type: 'group',
+          title: 'Issues',
+          icon: 'Terminal',
+          pages: issuesCommands.map((cmd) => `command:${cmd.data.id}:${cmd.data.version}`),
+        },
       renderOwners && buildOwnersSection(owners),
       renderRepository && buildRepositorySection(actor.data.repository as { url: string; language: string }),
       hasAttachments && buildAttachmentsSection(actor.data.attachments as any[]),

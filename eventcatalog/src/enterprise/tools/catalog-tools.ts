@@ -1021,5 +1021,5 @@ export const toolDescriptions = {
   getDataProductOutputs:
     'Use this tool to get the outputs (resources produced) for a data product. Returns fully hydrated output resources with their id, version, name, summary, collection type, and data contracts (if defined). Data contracts include the contract name, path, format, type, and content.',
   getArchitectureDiagramAsMermaid:
-    'Use this tool to get the architecture diagram for a resource as Mermaid flowchart code. This shows how the resource connects to other resources (services, events, channels, etc.) in the architecture. The mermaid code can be rendered to visualize the architecture or used to understand relationships. Supported collections: events, commands, queries, services, domains, flows, containers, data-products.',
+    'Use this tool to get the architecture diagram for a resource as Mermaid flowchart code. This shows how the resource connects to other resources (services, events, channels, etc.) in the architecture. The mermaid code can be rendered to visualize the architecture or used to understand relationships. Supported collections: events, commands, queries, services, domains, flows, containers, data-products, policies, views, actors.',
 };
