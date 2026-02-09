@@ -420,6 +420,78 @@ export const mockPolicies = [
 ];
 
 // ============================================
+// Mock Views
+// ============================================
+export const mockViews = [
+  {
+    id: 'OrderSummary-1.0.0',
+    slug: 'views/OrderSummary',
+    collection: 'views',
+    body: 'Order summary view description',
+    data: {
+      id: 'OrderSummary',
+      name: 'Order Summary',
+      version: '1.0.0',
+      summary: 'Read model showing current order status and details',
+      owners: ['order-team'],
+      subscribes: [{ id: 'OrderCreated', version: '1.0.0' }],
+      informs: [{ id: 'CustomerSupport', version: '1.0.0' }],
+    },
+  },
+  {
+    id: 'InventoryStatus-1.0.0',
+    slug: 'views/InventoryStatus',
+    collection: 'views',
+    body: 'Inventory status view description',
+    data: {
+      id: 'InventoryStatus',
+      name: 'Inventory Status',
+      version: '1.0.0',
+      summary: 'Read model showing current inventory levels',
+      owners: ['inventory-team'],
+      subscribes: [{ id: 'InventoryUpdated', version: '1.0.0' }],
+      informs: [],
+    },
+  },
+];
+
+// ============================================
+// Mock Actors
+// ============================================
+export const mockActors = [
+  {
+    id: 'CustomerSupport-1.0.0',
+    slug: 'actors/CustomerSupport',
+    collection: 'actors',
+    body: 'Customer support actor description',
+    data: {
+      id: 'CustomerSupport',
+      name: 'Customer Support',
+      version: '1.0.0',
+      summary: 'Support agent handling customer inquiries',
+      owners: ['support-team'],
+      reads: [{ id: 'OrderSummary', version: '1.0.0' }],
+      issues: [{ id: 'CreateOrder', version: '1.0.0' }],
+    },
+  },
+  {
+    id: 'WarehouseManager-1.0.0',
+    slug: 'actors/WarehouseManager',
+    collection: 'actors',
+    body: 'Warehouse manager actor description',
+    data: {
+      id: 'WarehouseManager',
+      name: 'Warehouse Manager',
+      version: '1.0.0',
+      summary: 'Manager overseeing warehouse operations',
+      owners: ['inventory-team'],
+      reads: [{ id: 'InventoryStatus', version: '1.0.0' }],
+      issues: [],
+    },
+  },
+];
+
+// ============================================
 // Mock Teams
 // ============================================
 export const mockTeams = [
@@ -562,6 +634,8 @@ export const mockCollections: Record<string, any[]> = {
   channels: mockChannels,
   entities: mockEntities,
   policies: mockPolicies,
+  views: mockViews,
+  actors: mockActors,
   containers: mockContainers,
   diagrams: mockDiagrams,
   teams: mockTeams,

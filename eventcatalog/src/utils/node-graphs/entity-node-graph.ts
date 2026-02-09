@@ -18,6 +18,7 @@ import type { CollectionMessageTypes } from '@types';
 import { getProducersOfMessage, getConsumersOfMessage } from '@utils/collections/services';
 import { getEntityProducersOfMessage, getEntityConsumersOfMessage } from '@utils/collections/entities';
 import { getPolicyChainNodesForCommand, getPolicyChainNodesForEvent } from '@utils/node-graphs/utils/policy-chain';
+import { getViewActorChainNodesForEvent, getViewActorChainNodesForCommand } from '@utils/node-graphs/utils/view-actor-chain';
 
 type DagreGraph = any;
 
@@ -47,7 +48,7 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
   let edges: Edge[] = [];
 
   // Fetch all collections in parallel
-  const [entities, services, events, commands, queries, channels, policies] = await Promise.all([
+  const [entities, services, events, commands, queries, channels, policies, views, actors] = await Promise.all([
     getCollection('entities'),
     getCollection('services'),
     getCollection('events'),
@@ -55,6 +56,8 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
     getCollection('queries'),
     getCollection('channels'),
     getCollection('policies'),
+    getCollection('views').then((r) => r.filter((v) => v.data.hidden !== true)),
+    getCollection('actors').then((r) => r.filter((a) => a.data.hidden !== true)),
   ]);
 
   const allMessages = [...events, ...commands, ...queries];
@@ -63,6 +66,8 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
   const channelMap = createVersionedMap(channels);
   const eventMap = createVersionedMap(events);
   const commandMap = createVersionedMap(commands);
+  const actorMap = createVersionedMap(actors);
+  const viewMap = createVersionedMap(views);
 
   // Find the entity
   const entity = findInMap(entityMap, id, version);
@@ -225,6 +230,17 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
       });
       nodes.push(...chainNodes);
       edges.push(...chainEdges);
+
+      // View/Actor chain for commands: actors that issue this command ← views they read
+      const { nodes: vaNodes, edges: vaEdges } = getViewActorChainNodesForCommand({
+        message,
+        messageNodeId: messageId,
+        actors,
+        viewMap,
+        mode,
+      });
+      nodes.push(...vaNodes);
+      edges.push(...vaEdges);
     }
   }
 
@@ -364,6 +380,17 @@ export const getNodesAndEdges = async ({ id, version, mode = 'simple', defaultFl
       });
       nodes.push(...chainNodes);
       edges.push(...chainEdges);
+
+      // View/Actor chain for events: views subscribing to this event → actors they inform
+      const { nodes: vaNodes, edges: vaEdges } = getViewActorChainNodesForEvent({
+        message,
+        messageNodeId: messageId,
+        views,
+        actorMap,
+        mode,
+      });
+      nodes.push(...vaNodes);
+      edges.push(...vaEdges);
     }
   }
 

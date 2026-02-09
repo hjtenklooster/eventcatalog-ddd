@@ -320,8 +320,8 @@ function createMcpServer() {
     {
       name: 'All Resources in EventCatalog',
       uri: 'eventcatalog://all',
-      description: 'All messages, domains and services in EventCatalog',
-      collections: ['events', 'commands', 'queries', 'services', 'domains', 'flows', 'channels', 'entities', 'policies'] as const,
+      description: 'All messages, domains, services, views, actors and other resources in EventCatalog',
+      collections: ['events', 'commands', 'queries', 'services', 'domains', 'flows', 'channels', 'entities', 'policies', 'views', 'actors'] as const,
     },
     {
       name: 'All Events in EventCatalog',
@@ -370,6 +370,18 @@ function createMcpServer() {
       uri: 'eventcatalog://policies',
       description: 'All policies in EventCatalog',
       collections: ['policies'] as const,
+    },
+    {
+      name: 'All Views in EventCatalog',
+      uri: 'eventcatalog://views',
+      description: 'All views in EventCatalog',
+      collections: ['views'] as const,
+    },
+    {
+      name: 'All Actors in EventCatalog',
+      uri: 'eventcatalog://actors',
+      description: 'All actors in EventCatalog',
+      collections: ['actors'] as const,
     },
     {
       name: 'All Containers  in EventCatalog',
@@ -464,6 +476,8 @@ const mcpResources = [
   'eventcatalog://services',
   'eventcatalog://domains',
   'eventcatalog://policies',
+  'eventcatalog://views',
+  'eventcatalog://actors',
   'eventcatalog://flows',
   'eventcatalog://teams',
   'eventcatalog://users',

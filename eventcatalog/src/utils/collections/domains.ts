@@ -91,6 +91,7 @@ export const getDomains = async ({
     allQueries,
     allContainers,
     allDataProducts,
+    allViews,
   ] = await Promise.all([
     getCollection('domains'),
     getCollection('services'),
@@ -102,6 +103,7 @@ export const getDomains = async ({
     getCollection('queries'),
     getCollection('containers'),
     getCollection('data-products'),
+    getCollection('views'),
   ]);
 
   const allMessages = [...allEvents, ...allCommands, ...allQueries];
@@ -115,6 +117,7 @@ export const getDomains = async ({
   const policyMap = createVersionedMap(allPolicies);
   const flowMap = createVersionedMap(allFlows);
   const dataProductMap = createVersionedMap(allDataProducts);
+  const viewMap = createVersionedMap(allViews);
 
   // 3. Filter the domains we actually want to process/return
   const targetDomains = allDomains.filter((domain: Domain) => {
@@ -162,6 +165,11 @@ export const getDomains = async ({
             .map((p: { id: string; version: string | undefined }) => findInMap(policyMap, p.id, p.version))
             .filter((p: any) => !!p);
 
+          // Hydrate views for the subdomain
+          const subdomainViews = (subDomain.data.views || [])
+            .map((v: { id: string; version: string | undefined }) => findInMap(viewMap, v.id, v.version))
+            .filter((v: any) => !!v);
+
           return {
             ...subDomain,
             data: {
@@ -169,6 +177,7 @@ export const getDomains = async ({
               services: hydratedServices as any,
               'data-products': subdomainDataProducts as any,
               policies: subdomainPolicies as any,
+              views: subdomainViews as any,
             },
           };
         });
@@ -184,6 +193,12 @@ export const getDomains = async ({
       const policies = policiesInDomain
         .map((policy: { id: string; version: string | undefined }) => findInMap(policyMap, policy.id, policy.version))
         .filter((p): p is CollectionEntry<'policies'> => !!p);
+
+      // Resolve Views
+      const viewsInDomain = domain.data.views || [];
+      const views = viewsInDomain
+        .map((view: { id: string; version: string | undefined }) => findInMap(viewMap, view.id, view.version))
+        .filter((v): v is CollectionEntry<'views'> => !!v);
 
       // Resolve Flows
       const flowsInDomain = domain.data.flows || [];
@@ -244,6 +259,7 @@ export const getDomains = async ({
           domains: subDomains as any,
           entities: entities as any,
           policies: policies as any,
+          views: views as any,
           flows: flows as any,
           'data-products': dataProducts as any,
           sends: domainSends as any,

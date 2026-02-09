@@ -144,8 +144,8 @@ describe('Entity NodeGraph', () => {
     it('should render channels when entity receives message from a channel', async () => {
       const { nodes, edges } = await getNodesAndEdges({ id: 'Payment', version: '1.0.0' });
 
-      // Should have channel node
-      const channelNode = nodes.find((n) => n.id === 'OrderChannel-1.0.0');
+      // Should have channel node (receives-side channels get '-recv' suffix to avoid collision with sends-side)
+      const channelNode = nodes.find((n) => n.id === 'OrderChannel-1.0.0-recv');
       expect(channelNode).toBeDefined();
 
       // Should have message node (ShipOrder)
@@ -153,11 +153,11 @@ describe('Entity NodeGraph', () => {
       expect(messageNode).toBeDefined();
 
       // Edge from message to channel (no producers in this test setup, so direct connection)
-      const messageToChannelEdge = edges.find((e) => e.source === 'ShipOrder-1.0.0' && e.target === 'OrderChannel-1.0.0');
+      const messageToChannelEdge = edges.find((e) => e.source === 'ShipOrder-1.0.0' && e.target === 'OrderChannel-1.0.0-recv');
       expect(messageToChannelEdge).toBeDefined();
 
       // Edge from channel to entity
-      const channelToEntityEdge = edges.find((e) => e.source === 'OrderChannel-1.0.0' && e.target === 'Payment-1.0.0');
+      const channelToEntityEdge = edges.find((e) => e.source === 'OrderChannel-1.0.0-recv' && e.target === 'Payment-1.0.0');
       expect(channelToEntityEdge).toBeDefined();
       expect(channelToEntityEdge?.label).toBe('handles');
     });

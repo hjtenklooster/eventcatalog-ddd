@@ -1,0 +1,35 @@
+---
+id: WarehouseManager
+name: Warehouse Manager
+version: 1.0.0
+summary: Warehouse staff responsible for inventory management and restocking decisions.
+owners:
+  - dboyne
+reads:
+  - id: InventoryDashboardView
+    version: "1.0.0"
+issues:
+  - id: UpdateInventory
+    version: "0.0.3"
+---
+
+import Footer from '@catalog/components/footer.astro';
+
+## Role Description
+
+The Warehouse Manager monitors inventory levels across warehouses and makes restocking decisions based on current stock data shown in the Inventory Dashboard View.
+
+## Responsibilities
+
+- Monitor inventory levels via the Inventory Dashboard View
+- Decide when to trigger restocking
+- Issue inventory update commands for corrections
+- Coordinate with suppliers when stock is low
+
+## Decision Flow
+
+The manager reads the **Inventory Dashboard View** to see current stock levels, then decides whether to issue inventory updates or initiate restocking workflows.
+
+<NodeGraph />
+
+<Footer />

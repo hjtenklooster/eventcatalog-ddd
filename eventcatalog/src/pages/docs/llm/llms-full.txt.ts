@@ -16,6 +16,8 @@ type AllowedCollections =
   | 'channels'
   | 'entities'
   | 'policies'
+  | 'views'
+  | 'actors'
   | 'flows'
   | 'containers';
 
@@ -28,6 +30,8 @@ const teams = await getCollection('teams');
 const users = await getCollection('users');
 const entities = await getCollection('entities');
 const policies = await getCollection('policies');
+const views = await getCollection('views');
+const actors = await getCollection('actors');
 const channels = await getCollection('channels');
 const flows = await getCollection('flows');
 const containers = await getCollection('containers');
@@ -50,6 +54,8 @@ export const GET: APIRoute = async ({ params, request }) => {
     ...users,
     ...entities,
     ...policies,
+    ...views,
+    ...actors,
     ...channels,
     ...containers,
     ...flows,

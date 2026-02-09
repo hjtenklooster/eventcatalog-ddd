@@ -1,0 +1,36 @@
+---
+id: OrderSummaryView
+name: Order Summary View
+version: 1.0.0
+summary: Read model providing order overview data for support agents.
+owners:
+  - dboyne
+subscribes:
+  - id: OrderConfirmed
+    version: "0.0.1"
+  - id: OrderAmended
+    version: "0.0.1"
+informs:
+  - id: CustomerSupportAgent
+    version: "1.0.0"
+---
+
+import Footer from '@catalog/components/footer.astro';
+
+## Overview
+
+The Order Summary View is a read model that combines order confirmation and amendment events into a denormalized projection optimized for customer support workflows.
+
+## Data Shape
+
+| Field | Source Event | Description |
+|-------|-------------|-------------|
+| orderId | OrderConfirmed | Unique order identifier |
+| status | OrderAmended | Current order status |
+| customerName | OrderConfirmed | Customer display name |
+| totalAmount | OrderConfirmed | Order total |
+| lastUpdated | OrderAmended | Last amendment timestamp |
+
+<NodeGraph />
+
+<Footer />

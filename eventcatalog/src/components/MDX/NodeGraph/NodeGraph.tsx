@@ -588,6 +588,8 @@ const NodeGraphBuilder = ({
       queries: 'bg-green-600',
       channels: 'bg-gray-600',
       externalSystem: 'bg-pink-600',
+      view: 'bg-green-500',
+      views: 'bg-green-500',
       actor: 'bg-yellow-500',
       step: 'bg-gray-700',
       data: 'bg-blue-600',
